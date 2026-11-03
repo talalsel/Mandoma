@@ -8,4 +8,31 @@
     <div class="col-md-3"><div class="card text-bg-warning"><div class="card-body"><h6>أصناف منخفضة</h6><h3>@ViewBag.LowStockCount</h3></div></div></div>
     <div class="col-md-3"><div class="card text-bg-info"><div class="card-body"><h6>مبيعات اليوم</h6><h3>@(((decimal)ViewBag.TodaySales).ToString("N2"))</h3></div></div></div>
 </div>
+@if (User.IsInRole("Admin") || User.IsInRole("Accountant") || User.IsInRole("Cashier"))
+{
+    <div class="row g-3 mt-1">
+        <div class="col-md-3">
+            <div class="card border-success"><div class="card-body"><h6 class="text-success">الصندوق الإجمالي</h6><h3>@(((decimal)ViewBag.MainCashBalance).ToString("N2"))</h3></div></div>
+        </div>
+        @foreach (var bank in (IEnumerable<Inventory.Web.Controllers.BankBalanceView>)ViewBag.BankBalances)
+        {
+            <div class="col-md-3"><div class="card border-primary"><div class="card-body"><h6 class="text-primary">@bank.AccountName (@bank.AccountCode)</h6><h3>@bank.Balance.ToString("N2")</h3></div></div></div>
+        }
+        @if (!((IEnumerable<Inventory.Web.Controllers.BankBalanceView>)ViewBag.BankBalances).Any())
+        {
+            <div class="col-md-3"><div class="card border-primary"><div class="card-body"><h6 class="text-primary">رصيد البنك</h6><h3>0.00</h3></div></div></div>
+        }
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between"><strong>أرصدة خزائن المعارض والمخازن</strong></div>
+        <div class="card-body"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>المعرض / المخزن</th><th>رصيد الخزنة</th><th>الحالة</th></tr></thead><tbody>
+        @foreach (var item in (IDictionary<string, decimal>)ViewBag.BranchBalances)
+        {
+            <tr><td>@item.Key</td><td class="fw-bold">@item.Value.ToString("N2")</td><td><span class="badge @(item.Value >= 0 ? "bg-success" : "bg-danger")">@(item.Value >= 0 ? "رصيد موجب" : "رصيد سالب")</span></td></tr>
+        }
+        @if (!((IDictionary<string, decimal>)ViewBag.BranchBalances).Any()) { <tr><td colspan="3" class="text-center text-muted">لا توجد معارض مسجلة</td></tr> }
+        </tbody></table></div></div>
+    </div>
+}
 <div class="card mt-4"><div class="card-header">تنبيهات المخزون</div><div class="card-body"><table class="table mb-0"><thead><tr><th>الصنف</th><th>الكمية</th><th>حد التنبيه</th></tr></thead><tbody>@foreach (var p in (IEnumerable<Inventory.Web.Models.Product>)ViewBag.LowStock) { <tr><td>@p.Name</td><td>@p.Quantity</td><td>@p.MinQuantity</td></tr> }</tbody></table></div></div>
