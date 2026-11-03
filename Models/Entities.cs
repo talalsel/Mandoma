@@ -18,6 +18,15 @@ public class UserAccount
     public bool IsActive { get; set; } = true;
 }
 
+public class Customer
+{
+    public int Id { get; set; }
+    [Required, StringLength(150)] public string Name { get; set; } = "";
+    [StringLength(30)] public string Phone { get; set; } = "";
+    [StringLength(250)] public string Address { get; set; } = "";
+    public bool IsActive { get; set; } = true;
+}
+
 public class Product
 {
     public int Id { get; set; }

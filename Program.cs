@@ -60,7 +60,10 @@ using (var scope = app.Services.CreateScope())
     if (!string.IsNullOrWhiteSpace(builder.Configuration["DATABASE_URL"]))
         await db.Database.MigrateAsync();
     else
+    {
         db.Database.EnsureCreated();
+        await EnsureSqliteSchemaAsync(db);
+    }
 
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<UserAccount>>();
     var adminUsername = builder.Configuration["ADMIN_USERNAME"];
@@ -107,5 +110,30 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
+async Task EnsureSqliteSchemaAsync(AppDbContext db)
+{
+    var statements = new[]
+    {
+        "ALTER TABLE Sales ADD COLUMN Discount TEXT NOT NULL DEFAULT 0",
+        "ALTER TABLE Sales ADD COLUMN CustomerName TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE Sales ADD COLUMN CustomerPhone TEXT NOT NULL DEFAULT ''",
+        "ALTER TABLE Sales ADD COLUMN Notes TEXT NOT NULL DEFAULT ''",
+        "CREATE TABLE IF NOT EXISTS Accounts (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Code TEXT NOT NULL, Name TEXT NOT NULL, Type INTEGER NOT NULL, ParentId INTEGER NULL, IsActive INTEGER NOT NULL DEFAULT 1)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS IX_Accounts_Code ON Accounts(Code)",
+        "CREATE TABLE IF NOT EXISTS JournalEntries (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Number TEXT NOT NULL, EntryDate TEXT NOT NULL, Description TEXT NOT NULL DEFAULT '', Status INTEGER NOT NULL DEFAULT 1, ReferenceType TEXT NOT NULL DEFAULT 'Manual', ReferenceId INTEGER NULL, UserId INTEGER NOT NULL, CreatedAt TEXT NOT NULL)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS IX_JournalEntries_Number ON JournalEntries(Number)",
+        "CREATE TABLE IF NOT EXISTS JournalLines (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, JournalEntryId INTEGER NOT NULL, AccountId INTEGER NOT NULL, Debit TEXT NOT NULL DEFAULT '0', Credit TEXT NOT NULL DEFAULT '0', Description TEXT NOT NULL DEFAULT '')",
+        "CREATE TABLE IF NOT EXISTS Expenses (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ExpenseDate TEXT NOT NULL, Description TEXT NOT NULL, Amount TEXT NOT NULL DEFAULT '0', ExpenseAccountId INTEGER NOT NULL, UserId INTEGER NOT NULL, IsCancelled INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS Purchases (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, InvoiceNumber TEXT NOT NULL, PurchaseDate TEXT NOT NULL, Total TEXT NOT NULL DEFAULT '0', SupplierName TEXT NOT NULL DEFAULT '', IsPaid INTEGER NOT NULL DEFAULT 0, UserId INTEGER NOT NULL, IsCancelled INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS CashRegisterSessions (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, UserId INTEGER NOT NULL, OpenedAt TEXT NOT NULL, ClosedAt TEXT NULL, OpeningBalance TEXT NOT NULL DEFAULT '0', ExpectedBalance TEXT NULL, ActualBalance TEXT NULL, Difference TEXT NULL, IsClosed INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS Customers (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Phone TEXT NOT NULL DEFAULT '', Address TEXT NOT NULL DEFAULT '', IsActive INTEGER NOT NULL DEFAULT 1)"
+    };
+
+    foreach (var sql in statements)
+    {
+        try { await db.Database.ExecuteSqlRawAsync(sql); }
+        catch { /* Column/table may already exist. */ }
+    }
+}
 
 app.Run();

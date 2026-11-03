@@ -4,6 +4,7 @@ namespace Inventory.Web.Models;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<UserAccount> Users => Set<UserAccount>();
     public DbSet<Sale> Sales => Set<Sale>();

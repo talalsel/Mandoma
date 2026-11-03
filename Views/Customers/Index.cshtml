@@ -1,0 +1,5 @@
+@model IEnumerable<Inventory.Web.Models.Customer>
+@{ ViewData["Title"]="الزبائن"; }
+<div class="d-flex justify-content-between mb-3"><h3>الزبائن</h3><a asp-action="Create" class="btn btn-primary">زبون جديد</a></div>
+<form method="get" class="mb-3"><input name="search" class="form-control" placeholder="بحث بالاسم أو رقم الهاتف"></form>
+<table class="table table-striped"><thead><tr><th>الاسم</th><th>الهاتف</th><th>العنوان</th><th>الحالة</th><th></th></tr></thead><tbody>@foreach(var c in Model){<tr><td>@c.Name</td><td>@c.Phone</td><td>@c.Address</td><td>@(c.IsActive ? "نشط":"معطل")</td><td><a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-warning">تعديل</a>@if(User.IsInRole("Admin")){<form asp-action="Delete" asp-route-id="@c.Id" method="post" class="d-inline ms-1">@Html.AntiForgeryToken()<button class="btn btn-sm btn-danger">حذف</button></form>}</td></tr>}</tbody></table>

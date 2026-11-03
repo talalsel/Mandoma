@@ -12,7 +12,7 @@ public class AccountingController(AppDbContext db) : Controller
     public async Task<IActionResult> Index() => View(await db.JournalEntries.Include(x => x.Lines).ThenInclude(x => x.Account).OrderByDescending(x => x.EntryDate).Take(100).ToListAsync());
 
     [Authorize(Roles = "Admin,Accountant")]
-    public async Task<IActionResult> Accounts() => View(await db.Accounts.OrderBy(x => x.Code).ToListAsync());
+    public async Task<IActionResult> Accounts() { await EnsureAccountsAsync(); return View(await db.Accounts.OrderBy(x => x.Code).ToListAsync()); }
 
     [Authorize(Roles = "Admin,Accountant")]
     public async Task<IActionResult> CreateAccount() { ViewBag.Parents = await db.Accounts.Where(x => x.IsActive).OrderBy(x => x.Code).ToListAsync(); return View(new Account()); }
