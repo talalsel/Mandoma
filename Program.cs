@@ -120,8 +120,8 @@ async Task EnsureSqliteSchemaAsync(AppDbContext db)
         "CREATE UNIQUE INDEX IF NOT EXISTS IX_JournalEntries_Number ON JournalEntries(Number)",
         "CREATE TABLE IF NOT EXISTS JournalLines (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, JournalEntryId INTEGER NOT NULL, AccountId INTEGER NOT NULL, Debit TEXT NOT NULL DEFAULT '0', Credit TEXT NOT NULL DEFAULT '0', Description TEXT NOT NULL DEFAULT '')",
         "CREATE TABLE IF NOT EXISTS Expenses (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, ExpenseDate TEXT NOT NULL, Description TEXT NOT NULL, Amount TEXT NOT NULL DEFAULT '0', ExpenseAccountId INTEGER NOT NULL, UserId INTEGER NOT NULL, IsCancelled INTEGER NOT NULL DEFAULT 0)",
-        "CREATE TABLE IF NOT EXISTS Purchases (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, InvoiceNumber TEXT NOT NULL, PurchaseDate TEXT NOT NULL, Total TEXT NOT NULL DEFAULT '0', SupplierName TEXT NOT NULL DEFAULT '', IsPaid INTEGER NOT NULL DEFAULT 0, UserId INTEGER NOT NULL, IsCancelled INTEGER NOT NOT NULL DEFAULT 0)",
-        "CREATE TABLE IF NOT EXISTS CashRegisterSessions (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, UserId INTEGER NOT NULL, OpenedAt TEXT NOT NULL, ClosedAt TEXT NULL, OpeningBalance TEXT NOT NULL DEFAULT '0', ExpectedBalance TEXT NULL, ActualBalance TEXT NULL, Difference TEXT NULL, IsClosed INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS Purchases (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, InvoiceNumber TEXT NOT NULL, PurchaseDate TEXT NOT NULL, Total TEXT NOT NULL DEFAULT '0', SupplierName TEXT NOT NULL DEFAULT '', IsPaid INTEGER NOT NULL DEFAULT 0, UserId INTEGER NOT NULL, BranchId INTEGER NOT NULL DEFAULT 0, IsCancelled INTEGER NOT NULL DEFAULT 0)",
+        "CREATE TABLE IF NOT EXISTS CashRegisterSessions (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, BranchId INTEGER NOT NULL DEFAULT 0, UserId INTEGER NOT NULL, OpenedAt TEXT NOT NULL, ClosedAt TEXT NULL, OpeningBalance TEXT NOT NULL DEFAULT '0', ExpectedBalance TEXT NULL, ActualBalance TEXT NULL, Difference TEXT NULL, IsClosed INTEGER NOT NULL DEFAULT 0)",
         "CREATE TABLE IF NOT EXISTS Customers (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Phone TEXT NOT NULL DEFAULT '', Address TEXT NOT NULL DEFAULT '', IsActive INTEGER NOT NULL DEFAULT 1)",
         "CREATE TABLE IF NOT EXISTS Branches (Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, Name TEXT NOT NULL, Code TEXT NOT NULL, Address TEXT NOT NULL DEFAULT '', IsActive INTEGER NOT NULL DEFAULT 1)",
         "CREATE UNIQUE INDEX IF NOT EXISTS IX_Branches_Code ON Branches(Code)",
@@ -135,33 +135,37 @@ async Task EnsureSqliteSchemaAsync(AppDbContext db)
         catch { /* Column/table may already exist. */ }
     }
 
-    var userColumns = db.Database.SqlQueryRaw<string>("SELECT name FROM PRAGMA_TABLE_INFO('Users')").ToList();
-    if (!userColumns.Contains("BranchId"))
+    async Task<HashSet<string>> GetColumnsAsync(string table)
     {
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Users ADD COLUMN BranchId INTEGER NULL");
+        var connection = db.Database.GetDbConnection();
+        var shouldClose = connection.State != System.Data.ConnectionState.Open;
+        if (shouldClose) await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA table_info({table})";
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) columns.Add(reader.GetString(1));
+        if (shouldClose) await connection.CloseAsync();
+        return columns;
     }
 
-    var saleColumns = db.Database.SqlQueryRaw<string>("SELECT name FROM PRAGMA_TABLE_INFO('Sales')").ToList();
-    if (!saleColumns.Contains("BranchId"))
+    async Task EnsureColumnAsync(string table, string column, string definition)
     {
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN BranchId INTEGER NOT NULL DEFAULT 0");
+        var columns = await GetColumnsAsync(table);
+        if (!columns.Contains(column))
+            await db.Database.ExecuteSqlRawAsync($"ALTER TABLE {table} ADD COLUMN {column} {definition}");
     }
-    if (!saleColumns.Contains("Discount"))
-    {
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN Discount TEXT NOT NULL DEFAULT 0");
-    }
-    if (!saleColumns.Contains("CustomerName"))
-    {
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN CustomerName TEXT NOT NULL DEFAULT ''");
-    }
-    if (!saleColumns.Contains("CustomerPhone"))
-    {
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN CustomerPhone TEXT NOT NULL DEFAULT ''");
-    }
-    if (!saleColumns.Contains("Notes"))
-    {
-        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Sales ADD COLUMN Notes TEXT NOT NULL DEFAULT ''");
-    }
+
+    await EnsureColumnAsync("Users", "BranchId", "INTEGER NULL");
+    await EnsureColumnAsync("Products", "BranchId", "INTEGER NOT NULL DEFAULT 0");
+    await EnsureColumnAsync("Sales", "BranchId", "INTEGER NOT NULL DEFAULT 0");
+    await EnsureColumnAsync("Sales", "Discount", "TEXT NOT NULL DEFAULT 0");
+    await EnsureColumnAsync("Sales", "CustomerName", "TEXT NOT NULL DEFAULT ''");
+    await EnsureColumnAsync("Sales", "CustomerPhone", "TEXT NOT NULL DEFAULT ''");
+    await EnsureColumnAsync("Sales", "Notes", "TEXT NOT NULL DEFAULT ''");
+    await EnsureColumnAsync("Expenses", "BranchId", "INTEGER NOT NULL DEFAULT 0");
+    await EnsureColumnAsync("Purchases", "BranchId", "INTEGER NOT NULL DEFAULT 0");
+    await EnsureColumnAsync("CashRegisterSessions", "BranchId", "INTEGER NOT NULL DEFAULT 0");
 }
 
 

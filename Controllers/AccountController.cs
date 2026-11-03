@@ -92,4 +92,34 @@ public class AccountController(AppDbContext db, IPasswordHasher<UserAccount> has
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Users));
     }
+
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ChangePassword(int id)
+    {
+        var user = await db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+        return View(user);
+    }
+
+    [HttpPost, Authorize(Roles = "Admin"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(int id, string newPassword, string confirmPassword)
+    {
+        var user = await db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        {
+            ModelState.AddModelError(string.Empty, "كلمة المرور يجب ألا تقل عن 6 أحرف");
+            return View(user);
+        }
+        if (newPassword != confirmPassword)
+        {
+            ModelState.AddModelError(string.Empty, "كلمتا المرور غير متطابقتين");
+            return View(user);
+        }
+
+        user.PasswordHash = hasher.HashPassword(user, newPassword);
+        await db.SaveChangesAsync();
+        TempData["Message"] = $"تم تغيير كلمة مرور المستخدم {user.Username} بنجاح";
+        return RedirectToAction(nameof(Users));
+    }
 }
