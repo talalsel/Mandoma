@@ -25,6 +25,8 @@
                         else { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Products" asp-action="Index">المخزون والأصناف</a></li> }
                         @if (!User.IsInRole("StockOnly") || User.IsInRole("Admin")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Sales" asp-action="List">المبيعات والفواتير</a></li> }
                         @if (!User.IsInRole("StockOnly")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Customers" asp-action="Index">الزبائن</a></li> }
+                        @if (User.IsInRole("Admin") || User.IsInRole("StockOnly")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Branches" asp-action="Index">المعارض</a></li> }
+                        @if (User.IsInRole("Admin") || User.IsInRole("StockOnly") || User.IsInRole("Accountant")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Transfers" asp-action="Index">نقل المخزون</a></li> }
                         @if (User.IsInRole("Admin") || User.IsInRole("Accountant") || User.IsInRole("Cashier")) {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">المحاسبة</a>

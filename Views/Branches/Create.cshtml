@@ -1,0 +1,4 @@
+@model Inventory.Web.Models.Branch
+@{ ViewData["Title"]="إضافة معرض"; }
+<h3>إضافة معرض</h3>
+<form method="post">@Html.AntiForgeryToken()<div asp-validation-summary="All" class="text-danger"></div><div class="row g-3"><div class="col-md-4"><label asp-for="Code" class="form-label">رمز المعرض</label><input asp-for="Code" class="form-control" required></div><div class="col-md-4"><label asp-for="Name" class="form-label">اسم المعرض</label><input asp-for="Name" class="form-control" required></div><div class="col-md-4"><label asp-for="Address" class="form-label">العنوان</label><input asp-for="Address" class="form-control"></div><div class="col-md-12"><div class="form-check"><input asp-for="IsActive" class="form-check-input"><label asp-for="IsActive" class="form-check-label">معرض نشط</label></div></div></div><button class="btn btn-primary mt-3">حفظ</button> <a asp-action="Index" class="btn btn-secondary mt-3">رجوع</a></form>

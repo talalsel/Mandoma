@@ -8,6 +8,15 @@ public enum AccountType { Asset, Liability, Equity, Revenue, Expense }
 
 public enum JournalStatus { Draft, Posted, Cancelled }
 
+public class Branch
+{
+    public int Id { get; set; }
+    [Required, StringLength(100)] public string Name { get; set; } = "";
+    [Required, StringLength(30)] public string Code { get; set; } = "";
+    [StringLength(250)] public string Address { get; set; } = "";
+    public bool IsActive { get; set; } = true;
+}
+
 public class UserAccount
 {
     public int Id { get; set; }
@@ -15,6 +24,8 @@ public class UserAccount
     [Required, StringLength(50)] public string Username { get; set; } = "";
     [Required, StringLength(255)] public string PasswordHash { get; set; } = "";
     public UserRole Role { get; set; } = UserRole.Sales;
+    public int? BranchId { get; set; }
+    public Branch? Branch { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -33,6 +44,8 @@ public class Product
     [Required, StringLength(50)] public string Sku { get; set; } = "";
     [Required, StringLength(150)] public string Name { get; set; } = "";
     [StringLength(50)] public string? Category { get; set; }
+    public int BranchId { get; set; }
+    public Branch? Branch { get; set; }
     public decimal Cost { get; set; }
     public decimal Price { get; set; }
     public int Quantity { get; set; }
@@ -44,11 +57,13 @@ public class Sale
     public int Id { get; set; }
     public DateTime SoldAt { get; set; } = DateTime.Now;
     public decimal Total { get; set; }
-        public decimal Discount { get; set; }
-        [StringLength(150)] public string CustomerName { get; set; } = "";
-        [StringLength(30)] public string CustomerPhone { get; set; } = "";
-        [StringLength(500)] public string Notes { get; set; } = "";
-        public int UserId { get; set; }
+    public decimal Discount { get; set; }
+    [StringLength(150)] public string CustomerName { get; set; } = "";
+    [StringLength(30)] public string CustomerPhone { get; set; } = "";
+    [StringLength(500)] public string Notes { get; set; } = "";
+    public int BranchId { get; set; }
+    public Branch? Branch { get; set; }
+    public int UserId { get; set; }
     public UserAccount? User { get; set; }
     public List<SaleItem> Items { get; set; } = [];
 }
@@ -120,6 +135,8 @@ public class Expense
     public decimal Amount { get; set; }
     public int ExpenseAccountId { get; set; }
     public Account? ExpenseAccount { get; set; }
+    public int BranchId { get; set; }
+    public Branch? Branch { get; set; }
     public int UserId { get; set; }
     public bool IsCancelled { get; set; }
 }
@@ -131,6 +148,8 @@ public class Purchase
     public DateTime PurchaseDate { get; set; } = DateTime.Today;
     public decimal Total { get; set; }
     public string SupplierName { get; set; } = "";
+    public int BranchId { get; set; }
+    public Branch? Branch { get; set; }
     public bool IsPaid { get; set; }
     public int UserId { get; set; }
     public bool IsCancelled { get; set; }
@@ -139,6 +158,8 @@ public class Purchase
 public class CashRegisterSession
 {
     public int Id { get; set; }
+    public int BranchId { get; set; }
+    public Branch? Branch { get; set; }
     public int UserId { get; set; }
     public DateTime OpenedAt { get; set; } = DateTime.Now;
     public DateTime? ClosedAt { get; set; }
@@ -147,4 +168,31 @@ public class CashRegisterSession
     public decimal? ActualBalance { get; set; }
     public decimal? Difference { get; set; }
     public bool IsClosed { get; set; }
+}
+
+public class Transfer
+{
+    public int Id { get; set; }
+    public int FromBranchId { get; set; }
+    public Branch? FromBranch { get; set; }
+    public int ToBranchId { get; set; }
+    public Branch? ToBranch { get; set; }
+    public int ProductId { get; set; }
+    public Product? Product { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int UserId { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string Notes { get; set; } = "";
+}
+
+public class BranchStock
+{
+    public int Id { get; set; }
+    public int BranchId { get; set; }
+    public Branch? Branch { get; set; }
+    public int ProductId { get; set; }
+    public Product? Product { get; set; }
+    public int Quantity { get; set; }
 }

@@ -1,0 +1,4 @@
+@model IEnumerable<Inventory.Web.Models.Branch>
+@{ ViewData["Title"]="المعارض"; }
+<div class="d-flex justify-content-between mb-3"><h3>المعارض</h3><a asp-action="Create" class="btn btn-primary">إضافة معرض</a></div>
+<table class="table table-striped"><thead><tr><th>الرمز</th><th>اسم المعرض</th><th>العنوان</th><th>الحالة</th></tr></thead><tbody>@foreach(var b in Model){<tr><td>@b.Code</td><td>@b.Name</td><td>@b.Address</td><td>@(b.IsActive?"نشط":"معطل")</td><td><a asp-action="Edit" asp-route-id="@b.Id" class="btn btn-sm btn-warning">تعديل</a></td></tr>}</tbody></table>

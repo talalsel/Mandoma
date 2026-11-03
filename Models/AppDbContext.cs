@@ -5,7 +5,10 @@ namespace Inventory.Web.Models;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<BranchStock> BranchStocks => Set<BranchStock>();
+    public DbSet<Transfer> Transfers => Set<Transfer>();
     public DbSet<UserAccount> Users => Set<UserAccount>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
@@ -19,11 +22,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Branch>().HasIndex(x => x.Code).IsUnique();
         modelBuilder.Entity<Product>().HasIndex(x => x.Sku).IsUnique();
         modelBuilder.Entity<UserAccount>().HasIndex(x => x.Username).IsUnique();
         modelBuilder.Entity<Product>().Property(x => x.Cost).HasPrecision(18, 2);
         modelBuilder.Entity<Product>().Property(x => x.Price).HasPrecision(18, 2);
         modelBuilder.Entity<Sale>().Property(x => x.Total).HasPrecision(18, 2);
+        modelBuilder.Entity<Sale>().Property(x => x.Discount).HasPrecision(18, 2);
         modelBuilder.Entity<Account>().HasIndex(x => x.Code).IsUnique();
         modelBuilder.Entity<JournalEntry>().HasIndex(x => x.Number).IsUnique();
         modelBuilder.Entity<JournalLine>().Property(x => x.Debit).HasPrecision(18, 2);

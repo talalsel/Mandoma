@@ -1,0 +1,4 @@
+@model IEnumerable<Inventory.Web.Models.Transfer>
+@{ ViewData["Title"]="نقل المخزون"; }
+<div class="d-flex justify-content-between mb-3"><h3>نقل واستلام المخزون</h3><a asp-action="Create" class="btn btn-primary">طلب نقل جديد</a></div>
+<table class="table table-striped"><thead><tr><th>الصنف</th><th>من</th><th>إلى</th><th>الكمية</th><th>الحالة</th><th>التاريخ</th></tr></thead><tbody>@foreach(var t in Model){<tr><td>@t.Product?.Name</td><td>@t.FromBranch?.Name</td><td>@t.ToBranch?.Name</td><td>@t.Quantity</td><td>@t.Status</td><td>@t.CreatedAt.ToString("yyyy-MM-dd")</td></tr>}</tbody></table>

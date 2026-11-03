@@ -34,6 +34,7 @@ public class AccountController(AppDbContext db, IPasswordHasher<UserAccount> has
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.FullName),
             new(ClaimTypes.Role, user.Role.ToString()),
+            new("BranchId", user.BranchId?.ToString() ?? "0"),
             new("username", user.Username)
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -63,11 +64,16 @@ public class AccountController(AppDbContext db, IPasswordHasher<UserAccount> has
     }
 
     [Authorize(Roles = "Admin")]
-    public IActionResult CreateUser() => View(new UserAccount());
+    public async Task<IActionResult> CreateUser()
+    {
+        ViewBag.Branches = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
+        return View(new UserAccount());
+    }
 
     [HttpPost, Authorize(Roles = "Admin"), ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateUser(UserAccount user, string password)
     {
+        ViewBag.Branches = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
         if (await db.Users.AnyAsync(u => u.Username == user.Username))
         {
             ModelState.AddModelError("Username", "اسم المستخدم مستخدم بالفعل");
@@ -81,6 +87,7 @@ public class AccountController(AppDbContext db, IPasswordHasher<UserAccount> has
         user.PasswordHash = hasher.HashPassword(user, password);
         user.FullName = user.FullName.Trim();
         user.Username = user.Username.Trim();
+        if (user.BranchId == 0) user.BranchId = null;
         db.Users.Add(user);
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Users));
