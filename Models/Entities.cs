@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Web.Models;
 
-public enum UserRole { Admin, Sales, Accountant, Cashier, StockOnly }
+public enum UserRole { Admin, Sales, Accountant, Cashier, StockOnly, Personnel }
 
 public enum AccountType { Asset, Liability, Equity, Revenue, Expense }
 
@@ -27,6 +27,54 @@ public class UserAccount
     public int? BranchId { get; set; }
     public Branch? Branch { get; set; }
     public bool IsActive { get; set; } = true;
+}
+
+public enum AttendanceStatus { Present, Absent, Leave, SickLeave }
+
+public class Employee
+{
+    public int Id { get; set; }
+    [Required, StringLength(30)] public string EmployeeNumber { get; set; } = "";
+    [Required, StringLength(150)] public string FullName { get; set; } = "";
+    [StringLength(30)] public string NationalId { get; set; } = "";
+    [StringLength(30)] public string Phone { get; set; } = "";
+    [StringLength(150)] public string Email { get; set; } = "";
+    [StringLength(100)] public string JobTitle { get; set; } = "";
+    [StringLength(100)] public string Department { get; set; } = "";
+    public DateTime HireDate { get; set; } = DateTime.Today;
+    public decimal BaseSalary { get; set; }
+    [StringLength(100)] public string BankAccount { get; set; } = "";
+    public int? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+    public int? UserAccountId { get; set; }
+    public UserAccount? UserAccount { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class EmployeeAttendance
+{
+    public int Id { get; set; }
+    public int EmployeeId { get; set; }
+    public Employee? Employee { get; set; }
+    public DateTime Date { get; set; }
+    public AttendanceStatus Status { get; set; } = AttendanceStatus.Present;
+    public TimeSpan? CheckIn { get; set; }
+    public TimeSpan? CheckOut { get; set; }
+    [StringLength(250)] public string Notes { get; set; } = "";
+    public int? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+    public int RecordedByUserId { get; set; }
+}
+
+public class EmployeeDeduction
+{
+    public int Id { get; set; }
+    public int EmployeeId { get; set; }
+    public Employee? Employee { get; set; }
+    public DateTime DeductionDate { get; set; } = DateTime.Today;
+    public decimal Amount { get; set; }
+    [Required, StringLength(250)] public string Reason { get; set; } = "";
+    public int CreatedByUserId { get; set; }
 }
 
 public class Customer

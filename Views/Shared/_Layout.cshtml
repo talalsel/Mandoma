@@ -42,6 +42,7 @@
                                 </ul>
                             </li>
                         }
+                        @if (User.IsInRole("Admin") || User.IsInRole("Accountant") || User.IsInRole("Personnel")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Personnel" asp-action="Index">شؤون الموظفين</a></li> }
                         @if (User.IsInRole("Admin")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Users">المستخدمون والصلاحيات</a></li> }
                         <li class="nav-item ms-sm-auto"><span class="nav-link text-dark">@User.Identity?.Name</span></li>
                         <li class="nav-item"><a class="nav-link text-danger" asp-controller="Account" asp-action="Logout">خروج</a></li>

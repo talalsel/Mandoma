@@ -19,6 +19,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Purchase> Purchases => Set<Purchase>();
     public DbSet<CashRegisterSession> CashRegisterSessions => Set<CashRegisterSession>();
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeAttendance> EmployeeAttendances => Set<EmployeeAttendance>();
+    public DbSet<EmployeeDeduction> EmployeeDeductions => Set<EmployeeDeduction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +42,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<CashRegisterSession>().Property(x => x.ExpectedBalance).HasPrecision(18, 2);
         modelBuilder.Entity<CashRegisterSession>().Property(x => x.ActualBalance).HasPrecision(18, 2);
         modelBuilder.Entity<CashRegisterSession>().Property(x => x.Difference).HasPrecision(18, 2);
+        modelBuilder.Entity<Employee>().Property(x => x.BaseSalary).HasPrecision(18, 2);
+        modelBuilder.Entity<Employee>().HasIndex(x => x.EmployeeNumber).IsUnique();
+        modelBuilder.Entity<EmployeeDeduction>().Property(x => x.Amount).HasPrecision(18, 2);
+        modelBuilder.Entity<EmployeeAttendance>().HasIndex(x => new { x.EmployeeId, x.Date }).IsUnique();
 
         modelBuilder.Entity<UserAccount>().HasData(new UserAccount
         {
