@@ -2,7 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Inventory.Web.Models;
 
-public enum UserRole { Admin, Sales, StockOnly }
+public enum UserRole { Admin, Sales, Accountant, Cashier, StockOnly }
+
+public enum AccountType { Asset, Liability, Equity, Revenue, Expense }
+
+public enum JournalStatus { Draft, Posted, Cancelled }
 
 public class UserAccount
 {
@@ -31,7 +35,11 @@ public class Sale
     public int Id { get; set; }
     public DateTime SoldAt { get; set; } = DateTime.Now;
     public decimal Total { get; set; }
-    public int UserId { get; set; }
+        public decimal Discount { get; set; }
+        [StringLength(150)] public string CustomerName { get; set; } = "";
+        [StringLength(30)] public string CustomerPhone { get; set; } = "";
+        [StringLength(500)] public string Notes { get; set; } = "";
+        public int UserId { get; set; }
     public UserAccount? User { get; set; }
     public List<SaleItem> Items { get; set; } = [];
 }
@@ -56,4 +64,78 @@ public class StockMovement
     public string Reason { get; set; } = "";
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public int UserId { get; set; }
+}
+
+public class Account
+{
+    public int Id { get; set; }
+    [Required, StringLength(20)] public string Code { get; set; } = "";
+    [Required, StringLength(150)] public string Name { get; set; } = "";
+    public AccountType Type { get; set; }
+    public int? ParentId { get; set; }
+    public Account? Parent { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class JournalEntry
+{
+    public int Id { get; set; }
+    [Required, StringLength(30)] public string Number { get; set; } = "";
+    public DateTime EntryDate { get; set; } = DateTime.Today;
+    [StringLength(250)] public string Description { get; set; } = "";
+    public JournalStatus Status { get; set; } = JournalStatus.Posted;
+    public string ReferenceType { get; set; } = "Manual";
+    public int? ReferenceId { get; set; }
+    public int UserId { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public List<JournalLine> Lines { get; set; } = [];
+}
+
+public class JournalLine
+{
+    public int Id { get; set; }
+    public int JournalEntryId { get; set; }
+    public JournalEntry? JournalEntry { get; set; }
+    public int AccountId { get; set; }
+    public Account? Account { get; set; }
+    public decimal Debit { get; set; }
+    public decimal Credit { get; set; }
+    [StringLength(250)] public string Description { get; set; } = "";
+}
+
+public class Expense
+{
+    public int Id { get; set; }
+    public DateTime ExpenseDate { get; set; } = DateTime.Today;
+    [Required, StringLength(150)] public string Description { get; set; } = "";
+    public decimal Amount { get; set; }
+    public int ExpenseAccountId { get; set; }
+    public Account? ExpenseAccount { get; set; }
+    public int UserId { get; set; }
+    public bool IsCancelled { get; set; }
+}
+
+public class Purchase
+{
+    public int Id { get; set; }
+    [Required, StringLength(50)] public string InvoiceNumber { get; set; } = "";
+    public DateTime PurchaseDate { get; set; } = DateTime.Today;
+    public decimal Total { get; set; }
+    public string SupplierName { get; set; } = "";
+    public bool IsPaid { get; set; }
+    public int UserId { get; set; }
+    public bool IsCancelled { get; set; }
+}
+
+public class CashRegisterSession
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public DateTime OpenedAt { get; set; } = DateTime.Now;
+    public DateTime? ClosedAt { get; set; }
+    public decimal OpeningBalance { get; set; }
+    public decimal? ExpectedBalance { get; set; }
+    public decimal? ActualBalance { get; set; }
+    public decimal? Difference { get; set; }
+    public bool IsClosed { get; set; }
 }

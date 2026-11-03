@@ -1,0 +1,4 @@
+@model IEnumerable<Inventory.Web.Models.JournalEntry>
+@{ ViewData["Title"] = "القيود المحاسبية"; }
+<div class="d-flex justify-content-between mb-3"><h3>القيود المحاسبية</h3><a asp-action="CreateJournal" class="btn btn-primary">قيد جديد</a></div>
+<div class="table-responsive"><table class="table table-striped"><thead><tr><th>رقم القيد</th><th>التاريخ</th><th>البيان</th><th>الحالة</th><th>مدين</th><th>دائن</th></tr></thead><tbody>@foreach(var e in Model){<tr><td>@e.Number</td><td>@e.EntryDate.ToString("yyyy-MM-dd")</td><td>@e.Description</td><td>@(e.Status==Inventory.Web.Models.JournalStatus.Posted?"مرحّل":"مسودة")</td><td>@e.Lines.Sum(x=>x.Debit).ToString("N2")</td><td>@e.Lines.Sum(x=>x.Credit).ToString("N2")</td></tr>}</tbody></table></div>

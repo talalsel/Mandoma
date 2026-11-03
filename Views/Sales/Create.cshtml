@@ -1,0 +1,29 @@
+@{ ViewData["Title"]="إنشاء فاتورة بيع"; var products=(IEnumerable<Inventory.Web.Models.Product>)ViewBag.Products; }
+<h3 class="mb-3">إنشاء فاتورة بيع</h3>
+<form method="post" id="invoiceForm">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4"><label class="form-label">اسم العميل</label><input name="customerName" class="form-control" maxlength="150"></div>
+        <div class="col-md-4"><label class="form-label">رقم هاتف العميل</label><input name="customerPhone" class="form-control" maxlength="30"></div>
+        <div class="col-md-4"><label class="form-label">الخصم</label><input id="discount" name="discount" type="number" min="0" step="0.01" value="0" class="form-control"></div>
+    </div>
+    <table class="table table-bordered align-middle" id="itemsTable">
+        <thead><tr><th style="width:55%">الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th><th></th></tr></thead>
+        <tbody><tr class="item-row"><td><select name="productIds" class="form-select product-select">@foreach(var p in products){<option value="@p.Id" data-price="@p.Price" data-name="@p.Name">@p.Name - المتوفر @p.Quantity</option>}</select></td><td><input name="quantities" type="number" min="1" value="1" class="form-control quantity"></td><td><span class="unit-price">0.00</span></td><td><span class="line-total">0.00</span></td><td><button type="button" class="btn btn-outline-danger remove-row">حذف</button></td></tr></tbody>
+    </table>
+    <button type="button" class="btn btn-outline-primary mb-3" id="addRow">إضافة صنف آخر</button>
+    <div class="mb-3"><label class="form-label">ملاحظات</label><textarea name="notes" class="form-control" maxlength="500" rows="2"></textarea></div>
+    <div class="alert alert-light border"><strong>إجمالي الفاتورة: </strong><span id="grandTotal">0.00</span></div>
+    <button class="btn btn-primary">حفظ وطباعة الفاتورة</button>
+    <a asp-action="List" class="btn btn-secondary">رجوع</a>
+</form>
+@section Scripts {
+<script>
+const table=document.getElementById('itemsTable');
+function calc(){let subtotal=0;document.querySelectorAll('.item-row').forEach(row=>{const select=row.querySelector('.product-select');const option=select.options[select.selectedIndex];const price=parseFloat(option?.dataset.price||0);const quantity=parseInt(row.querySelector('.quantity').value||0);const total=price*quantity;row.querySelector('.unit-price').textContent=price.toFixed(2);row.querySelector('.line-total').textContent=total.toFixed(2);subtotal+=total});const discount=parseFloat(document.getElementById('discount').value||0);document.getElementById('grandTotal').textContent=Math.max(0,subtotal-discount).toFixed(2)}
+table.addEventListener('change',calc);table.addEventListener('input',calc);document.getElementById('discount').addEventListener('input',calc);
+document.getElementById('addRow').addEventListener('click',()=>{const row=table.querySelector('.item-row').cloneNode(true);row.querySelector('.quantity').value=1;table.querySelector('tbody').appendChild(row);calc});
+table.addEventListener('click',e=>{if(e.target.classList.contains('remove-row')&&document.querySelectorAll('.item-row').length>1){e.target.closest('tr').remove();calc()}});calc();
+</script>
+}

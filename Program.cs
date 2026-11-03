@@ -57,7 +57,10 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated();
+    if (!string.IsNullOrWhiteSpace(builder.Configuration["DATABASE_URL"]))
+        await db.Database.MigrateAsync();
+    else
+        db.Database.EnsureCreated();
 
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<UserAccount>>();
     var adminUsername = builder.Configuration["ADMIN_USERNAME"];

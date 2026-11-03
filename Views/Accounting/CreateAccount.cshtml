@@ -1,0 +1,11 @@
+@model Inventory.Web.Models.Account
+@{ ViewData["Title"]="حساب جديد"; var parents=(IEnumerable<Inventory.Web.Models.Account>)ViewBag.Parents; }
+<h3>إضافة حساب</h3>
+<form method="post">
+<div asp-validation-summary="All" class="text-danger"></div>
+<div class="row g-3">
+<div class="col-md-3"><label asp-for="Code" class="form-label">رمز الحساب</label><input asp-for="Code" class="form-control"></div>
+<div class="col-md-3"><label asp-for="Name" class="form-label">اسم الحساب</label><input asp-for="Name" class="form-control"></div>
+<div class="col-md-3"><label asp-for="Type" class="form-label">النوع</label><select asp-for="Type" class="form-select"><option value="Asset">أصول</option><option value="Liability">خصوم</option><option value="Equity">حقوق ملكية</option><option value="Revenue">إيرادات</option><option value="Expense">مصروفات</option></select></div>
+<div class="col-md-3"><label asp-for="ParentId" class="form-label">الحساب الرئيسي</label><select asp-for="ParentId" class="form-select"><option value="">بدون حساب رئيسي</option>@foreach(var p in parents){<option value="@p.Id">@p.Code - @p.Name</option>}</select></div>
+</div><button class="btn btn-primary mt-3">حفظ</button> <a asp-action="Accounts" class="btn btn-secondary mt-3">رجوع</a></form>

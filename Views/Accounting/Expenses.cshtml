@@ -1,0 +1,2 @@
+@model IEnumerable<Inventory.Web.Models.Expense>
+@{ ViewData["Title"]="المصروفات"; }<div class="d-flex justify-content-between mb-3"><h3>المصروفات</h3><a asp-action="CreateExpense" class="btn btn-primary">مصروف جديد</a></div><table class="table table-striped"><thead><tr><th>التاريخ</th><th>البيان</th><th>الحساب</th><th>المبلغ</th></tr></thead><tbody>@foreach(var e in Model){<tr><td>@e.ExpenseDate.ToString("yyyy-MM-dd")</td><td>@e.Description</td><td>@e.ExpenseAccount?.Name</td><td>@e.Amount.ToString("N2")</td></tr>}</tbody></table>

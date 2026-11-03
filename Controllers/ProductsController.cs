@@ -15,10 +15,12 @@ public class ProductsController(AppDbContext db) : Controller
         return View(await query.OrderBy(p => p.Name).ToListAsync());
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,StockOnly")]
     public IActionResult Create() => View(new Product());
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,StockOnly")]
     public async Task<IActionResult> Create(Product product)
     {
         if (!ModelState.IsValid) return View(product);
@@ -32,6 +34,7 @@ public class ProductsController(AppDbContext db) : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,StockOnly")]
     public async Task<IActionResult> Edit(int id)
     {
         var product = await db.Products.FindAsync(id);
@@ -40,6 +43,7 @@ public class ProductsController(AppDbContext db) : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,StockOnly")]
     public async Task<IActionResult> Edit(int id, Product product)
     {
         if (id != product.Id) return NotFound();

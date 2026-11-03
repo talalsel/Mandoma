@@ -21,8 +21,25 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item"><a class="nav-link text-dark" asp-controller="Home" asp-action="Index">الرئيسية</a></li>
-                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Products" asp-action="Index">المخزون والأصناف</a></li>
-                        @if (User.IsInRole("Admin")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Users">المستخدمون</a></li> }
+                        @if (!User.IsInRole("StockOnly") || User.IsInRole("Admin") || User.IsInRole("Accountant")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Products" asp-action="Index">المخزون والأصناف</a></li> }
+                        else { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Products" asp-action="Index">المخزون والأصناف</a></li> }
+                        @if (!User.IsInRole("StockOnly") || User.IsInRole("Admin")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Sales" asp-action="List">المبيعات والفواتير</a></li> }
+                        @if (User.IsInRole("Admin") || User.IsInRole("Accountant") || User.IsInRole("Cashier")) {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown">المحاسبة</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Accounting" asp-action="Index">القيود المحاسبية</a></li>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("Accountant")) {
+                                        <li><a class="dropdown-item" asp-controller="Accounting" asp-action="Accounts">شجرة الحسابات</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Accounting" asp-action="Ledger">دفتر الأستاذ</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Accounting" asp-action="TrialBalance">ميزان المراجعة</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Accounting" asp-action="Expenses">المصروفات</a></li>
+                                        <li><a class="dropdown-item" asp-action="Purchases" asp-controller="Accounting">المشتريات</a></li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin")) { <li class="nav-item"><a class="nav-link text-dark" asp-controller="Account" asp-action="Users">المستخدمون والصلاحيات</a></li> }
                         <li class="nav-item ms-sm-auto"><span class="nav-link text-dark">@User.Identity?.Name</span></li>
                         <li class="nav-item"><a class="nav-link text-danger" asp-controller="Account" asp-action="Logout">خروج</a></li>
                     </ul>
