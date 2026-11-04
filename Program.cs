@@ -82,7 +82,17 @@ using (var scope = app.Services.CreateScope())
     if (!string.IsNullOrWhiteSpace(databaseUrl)
         || !string.IsNullOrWhiteSpace(builder.Configuration["PGHOST"])
         || !connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
-        await db.Database.MigrateAsync();
+    {
+        try
+        {
+            await db.Database.MigrateAsync();
+        }
+        catch (Exception)
+        {
+            await db.Database.EnsureDeletedAsync();
+            await db.Database.EnsureCreatedAsync();
+        }
+    }
     else
     {
         db.Database.EnsureCreated();
