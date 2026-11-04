@@ -49,7 +49,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Accounts", (string)null);
+                    b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Branch", b =>
@@ -81,7 +81,7 @@ namespace Inventory.Web.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("Branches", (string)null);
+                    b.ToTable("Branches");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.BranchStock", b =>
@@ -105,7 +105,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("BranchStocks", (string)null);
+                    b.ToTable("BranchStocks");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.CashRegisterSession", b =>
@@ -122,7 +122,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal?>("Difference")
                         .HasPrecision(18, 2)
@@ -136,7 +136,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("OpenedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("OpeningBalance")
                         .HasPrecision(18, 2)
@@ -149,7 +149,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.ToTable("CashRegisterSessions", (string)null);
+                    b.ToTable("CashRegisterSessions");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Customer", b =>
@@ -178,7 +178,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Customers", (string)null);
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Employee", b =>
@@ -220,7 +220,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("HireDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
@@ -252,7 +252,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("UserAccountId");
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.EmployeeAttendance", b =>
@@ -271,7 +271,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("INTEGER");
@@ -294,7 +294,7 @@ namespace Inventory.Web.Migrations
                     b.HasIndex("EmployeeId", "Date")
                         .IsUnique();
 
-                    b.ToTable("EmployeeAttendances", (string)null);
+                    b.ToTable("EmployeeAttendances");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.EmployeeDeduction", b =>
@@ -311,7 +311,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("DeductionDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("INTEGER");
@@ -325,7 +325,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("EmployeeDeductions", (string)null);
+                    b.ToTable("EmployeeDeductions");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Expense", b =>
@@ -350,7 +350,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("ExpenseDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsCancelled")
                         .HasColumnType("INTEGER");
@@ -364,7 +364,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("ExpenseAccountId");
 
-                    b.ToTable("Expenses", (string)null);
+                    b.ToTable("Expenses");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.JournalEntry", b =>
@@ -374,7 +374,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -382,7 +382,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EntryDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -407,7 +407,7 @@ namespace Inventory.Web.Migrations
                     b.HasIndex("Number")
                         .IsUnique();
 
-                    b.ToTable("JournalEntries", (string)null);
+                    b.ToTable("JournalEntries");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.JournalLine", b =>
@@ -441,7 +441,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("JournalEntryId");
 
-                    b.ToTable("JournalLines", (string)null);
+                    b.ToTable("JournalLines");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Product", b =>
@@ -488,7 +488,7 @@ namespace Inventory.Web.Migrations
                     b.HasIndex("Sku")
                         .IsUnique();
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Purchase", b =>
@@ -512,7 +512,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("SupplierName")
                         .IsRequired()
@@ -529,7 +529,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("BranchId");
 
-                    b.ToTable("Purchases", (string)null);
+                    b.ToTable("Purchases");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Sale", b =>
@@ -561,7 +561,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("SoldAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("Total")
                         .HasPrecision(18, 2)
@@ -576,7 +576,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Sales", (string)null);
+                    b.ToTable("Sales");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.SaleItem", b =>
@@ -603,7 +603,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("SaleId");
 
-                    b.ToTable("SaleItems", (string)null);
+                    b.ToTable("SaleItems");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.StockMovement", b =>
@@ -613,7 +613,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("INTEGER");
@@ -632,7 +632,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("StockMovements", (string)null);
+                    b.ToTable("StockMovements");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.Transfer", b =>
@@ -642,7 +642,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("FromBranchId")
                         .HasColumnType("INTEGER");
@@ -678,7 +678,7 @@ namespace Inventory.Web.Migrations
 
                     b.HasIndex("ToBranchId");
 
-                    b.ToTable("Transfers", (string)null);
+                    b.ToTable("Transfers");
                 });
 
             modelBuilder.Entity("Inventory.Web.Models.UserAccount", b =>
@@ -718,7 +718,7 @@ namespace Inventory.Web.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
