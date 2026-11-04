@@ -97,12 +97,17 @@ public class Product
     public decimal Cost { get; set; }
     public decimal Price { get; set; }
     public int Quantity { get; set; }
+    public int ReservedQuantity { get; set; }
     public int MinQuantity { get; set; } = 5;
 }
+
+public enum SaleType { Cash = 0, Issue = 1, Draft = 2 }
 
 public class Sale
 {
     public int Id { get; set; }
+    public SaleType Type { get; set; } = SaleType.Cash;
+    [StringLength(30)] public string InvoiceNumber { get; set; } = "";
     public DateTime SoldAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public decimal Total { get; set; }
     public decimal Discount { get; set; }

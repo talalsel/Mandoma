@@ -9,25 +9,31 @@ namespace Inventory.Web.Controllers;
 [Authorize(Roles = "Admin,Sales,Cashier,Accountant")]
 public class SalesController(AppDbContext db) : Controller
 {
-    public async Task<IActionResult> List()
+    public async Task<IActionResult> List(string? search, SaleType? type)
     {
-        var sales = await db.Sales.Include(x => x.Items).ThenInclude(x => x.Product).Include(x => x.User).OrderByDescending(x => x.SoldAt).ToListAsync();
+        var query = db.Sales.Include(x => x.Items).ThenInclude(x => x.Product).Include(x => x.User).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.InvoiceNumber.Contains(search) || x.CustomerName.Contains(search) || x.CustomerPhone.Contains(search) || x.Id.ToString().Contains(search));
+        if (type.HasValue) query = query.Where(x => x.Type == type.Value);
+        var sales = await query.OrderByDescending(x => x.SoldAt).ToListAsync();
+        ViewBag.Search = search;
+        ViewBag.Type = type;
         return View(sales);
     }
 
     public async Task<IActionResult> Create()
     {
-        ViewBag.Products = await db.Products.Where(x => x.Quantity > 0).OrderBy(x => x.Name).ToListAsync();
+        ViewBag.Products = await db.Products.OrderBy(x => x.Name).ToListAsync();
         return View();
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(List<int> productIds, List<int> quantities, string customerName = "", string customerPhone = "", decimal discount = 0, string notes = "")
+    public async Task<IActionResult> Create(List<int> productIds, List<int> quantities, SaleType invoiceType = SaleType.Cash, string customerName = "", string customerPhone = "", decimal discount = 0, string notes = "")
     {
         if (productIds.Count == 0 || productIds.Count != quantities.Count || discount < 0)
         {
             ModelState.AddModelError("", "أدخل أصنافًا صحيحة ومبلغ خصم صالحًا");
-            ViewBag.Products = await db.Products.Where(x => x.Quantity > 0).OrderBy(x => x.Name).ToListAsync();
+            ViewBag.Products = await db.Products.OrderBy(x => x.Name).ToListAsync();
             return View();
         }
 
@@ -41,20 +47,27 @@ public class SalesController(AppDbContext db) : Controller
         {
             if (quantity <= 0) throw new InvalidOperationException("الكمية يجب أن تكون أكبر من صفر");
             var product = await db.Products.FindAsync(productId);
-            if (product == null || quantity > product.Quantity) throw new InvalidOperationException($"الكمية غير متوفرة للصنف {product?.Name ?? productId.ToString()}");
-            product.Quantity -= quantity;
+            if (product == null) throw new InvalidOperationException("الصنف غير موجود");
             subtotal += product.Price * quantity;
             cost += product.Cost * quantity;
             items.Add(new SaleItem { ProductId = product.Id, Quantity = quantity, UnitPrice = product.Price });
-            db.StockMovements.Add(new StockMovement { ProductId = product.Id, QuantityChange = -quantity, Reason = "بيع فاتورة", UserId = userId });
+
+            if (invoiceType != SaleType.Draft)
+            {
+                if (quantity > product.Quantity) throw new InvalidOperationException($"الكمية غير متوفرة للصنف {product.Name}");
+                product.Quantity -= quantity;
+                product.ReservedQuantity += quantity;
+                db.StockMovements.Add(new StockMovement { ProductId = product.Id, QuantityChange = -quantity, Reason = invoiceType == SaleType.Issue ? "أمر صرف" : "فاتورة نقدية", UserId = userId });
+            }
         }
 
         var total = subtotal - discount;
         if (total < 0) throw new InvalidOperationException("الخصم أكبر من إجمالي الفاتورة");
-        var sale = new Sale { UserId = userId, SoldAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), Total = total, Discount = discount, CustomerName = customerName?.Trim() ?? "", CustomerPhone = customerPhone?.Trim() ?? "", Notes = notes?.Trim() ?? "", Items = items };
+        var sale = new Sale { UserId = userId, Type = invoiceType, InvoiceNumber = await NextInvoiceNumberAsync(invoiceType), SoldAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), Total = total, Discount = discount, CustomerName = customerName?.Trim() ?? "", CustomerPhone = customerPhone?.Trim() ?? "", Notes = notes?.Trim() ?? "", Items = items };
         db.Sales.Add(sale);
         await db.SaveChangesAsync();
-        await AddSaleJournalAsync(sale, cost);
+        if (invoiceType != SaleType.Draft)
+            await AddSaleJournalAsync(sale, cost);
         await tx.CommitAsync();
         return RedirectToAction(nameof(Print), new { id = sale.Id });
     }
@@ -67,17 +80,65 @@ public class SalesController(AppDbContext db) : Controller
         return View(sale);
     }
 
-    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Edit(int id)
     {
         var sale = await db.Sales.Include(x => x.Items).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.Id == id);
-        if (sale == null) return NotFound(); return View(sale);
+        if (sale == null) return NotFound();
+        if (!User.IsInRole("Admin") && sale.Type != SaleType.Draft) return Forbid();
+        ViewBag.Products = await db.Products.OrderBy(x => x.Name).ToListAsync();
+        return View(sale);
     }
 
-    [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Edit(int id, decimal total)
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, List<int> productIds, List<int> quantities, string customerName = "", string customerPhone = "", decimal discount = 0, string notes = "")
     {
-        var sale = await db.Sales.FindAsync(id); if (sale == null) return NotFound(); if (total < 0) return BadRequest(); sale.Total = total; await db.SaveChangesAsync(); return RedirectToAction(nameof(List));
+        var sale = await db.Sales.Include(x => x.Items).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.Id == id);
+        if (sale == null) return NotFound();
+        if (!User.IsInRole("Admin") && sale.Type != SaleType.Draft) return Forbid();
+        if (productIds.Count == 0 || productIds.Count != quantities.Count || discount < 0) return BadRequest();
+
+        await using var tx = await db.Database.BeginTransactionAsync();
+        if (sale.Type != SaleType.Draft)
+        {
+            foreach (var oldItem in sale.Items)
+                if (oldItem.Product != null)
+                {
+                    oldItem.Product.Quantity += oldItem.Quantity;
+                    oldItem.Product.ReservedQuantity = Math.Max(0, oldItem.Product.ReservedQuantity - oldItem.Quantity);
+                }
+        }
+        db.SaleItems.RemoveRange(sale.Items);
+        await db.SaveChangesAsync();
+
+        decimal subtotal = 0;
+        decimal cost = 0;
+        var newItems = new List<SaleItem>();
+        foreach (var (productId, quantity) in productIds.Zip(quantities))
+        {
+            if (quantity <= 0) throw new InvalidOperationException("الكمية يجب أن تكون أكبر من صفر");
+            var product = await db.Products.FindAsync(productId);
+            if (product == null) throw new InvalidOperationException("الصنف غير موجود");
+            if (sale.Type != SaleType.Draft && quantity > product.Quantity) throw new InvalidOperationException($"الكمية غير متوفرة للصنف {product.Name}");
+            subtotal += product.Price * quantity;
+            cost += product.Cost * quantity;
+            newItems.Add(new SaleItem { SaleId = sale.Id, ProductId = product.Id, Quantity = quantity, UnitPrice = product.Price });
+            if (sale.Type != SaleType.Draft)
+            {
+                product.Quantity -= quantity;
+                product.ReservedQuantity += quantity;
+            }
+        }
+        var total = subtotal - discount;
+        if (total < 0) throw new InvalidOperationException("الخصم أكبر من إجمالي الفاتورة");
+        sale.Items = newItems;
+        sale.Total = total;
+        sale.Discount = discount;
+        sale.CustomerName = customerName.Trim();
+        sale.CustomerPhone = customerPhone.Trim();
+        sale.Notes = notes.Trim();
+        await db.SaveChangesAsync();
+        await tx.CommitAsync();
+        return RedirectToAction(nameof(List));
     }
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin")]
@@ -85,8 +146,35 @@ public class SalesController(AppDbContext db) : Controller
     {
         await using var tx = await db.Database.BeginTransactionAsync();
         var sale = await db.Sales.Include(x => x.Items).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.Id == id); if (sale == null) return NotFound();
-        foreach (var item in sale.Items) { if (item.Product != null) item.Product.Quantity += item.Quantity; }
+        foreach (var item in sale.Items)
+        {
+            if (item.Product != null && sale.Type != SaleType.Draft)
+            {
+                item.Product.Quantity += item.Quantity;
+                item.Product.ReservedQuantity = Math.Max(0, item.Product.ReservedQuantity - item.Quantity);
+            }
+        }
         db.SaleItems.RemoveRange(sale.Items); db.Sales.Remove(sale); await db.SaveChangesAsync(); await tx.CommitAsync(); return RedirectToAction(nameof(List));
+    }
+
+    private async Task<string> NextInvoiceNumberAsync(SaleType type)
+    {
+        var prefix = type == SaleType.Draft ? "DRAFT" : "INV";
+        var typesToMatch = type == SaleType.Draft
+            ? new[] { SaleType.Draft }
+            : new[] { SaleType.Cash, SaleType.Issue };
+        var lastNumber = await db.Sales
+            .Where(x => typesToMatch.Contains(x.Type) && x.InvoiceNumber.StartsWith(prefix + "-"))
+            .Select(x => x.InvoiceNumber)
+            .OrderByDescending(x => x)
+            .FirstOrDefaultAsync();
+        var sequence = 1;
+        if (!string.IsNullOrEmpty(lastNumber))
+        {
+            var parts = lastNumber.Split('-');
+            if (parts.Length > 1 && int.TryParse(parts[^1], out var last)) sequence = last + 1;
+        }
+        return $"{prefix}-{sequence:000000}";
     }
 
     private async Task AddSaleJournalAsync(Sale sale, decimal cost)

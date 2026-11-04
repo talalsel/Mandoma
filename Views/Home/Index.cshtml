@@ -1,7 +1,15 @@
 ﻿@{
     ViewData["Title"] = "لوحة التحكم";
 }
-<h2 class="mb-4">لوحة التحكم</h2>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <h2 class="mb-0">لوحة التحكم</h2>
+    <div class="card shadow-sm border-primary-subtle" style="min-width:260px">
+        <div class="card-body py-2 px-3 text-center">
+            <div id="live-clock" class="fw-bold fs-4 text-primary" aria-live="polite">--:--:--</div>
+            <div id="live-date" class="small text-muted">جارٍ تحميل التاريخ...</div>
+        </div>
+    </div>
+</div>
 <div class="row g-3">
     <div class="col-md-3"><div class="card text-bg-primary"><div class="card-body"><h6>عدد الأصناف</h6><h3>@ViewBag.ProductCount</h3></div></div></div>
     <div class="col-md-3"><div class="card text-bg-success"><div class="card-body"><h6>قيمة المخزون</h6><h3>@(((decimal)ViewBag.InventoryValue).ToString("N2"))</h3></div></div></div>
@@ -36,3 +44,18 @@
     </div>
 }
 <div class="card mt-4"><div class="card-header">تنبيهات المخزون</div><div class="card-body"><table class="table mb-0"><thead><tr><th>الصنف</th><th>الكمية</th><th>حد التنبيه</th></tr></thead><tbody>@foreach (var p in (IEnumerable<Inventory.Web.Models.Product>)ViewBag.LowStock) { <tr><td>@p.Name</td><td>@p.Quantity</td><td>@p.MinQuantity</td></tr> }</tbody></table></div></div>
+@section Scripts {
+<script>
+(function () {
+    const clock = document.getElementById('live-clock');
+    const date = document.getElementById('live-date');
+    function updateClock() {
+        const now = new Date();
+        clock.textContent = now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        date.textContent = now.toLocaleDateString('ar', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+})();
+</script>
+}

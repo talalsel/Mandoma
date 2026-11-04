@@ -4,7 +4,8 @@
     @Html.AntiForgeryToken()
     <div asp-validation-summary="All" class="text-danger"></div>
     <div class="row g-3 mb-3">
-        <div class="col-md-4"><label class="form-label">اسم العميل</label><input name="customerName" class="form-control" maxlength="150"></div>
+        <div class="col-md-3"><label class="form-label">نوع الفاتورة</label><select name="invoiceType" class="form-select"><option value="0">فاتورة مبيعات نقدية</option><option value="1">أمر صرف</option><option value="2">فاتورة مبدئية</option></select></div>
+        <div class="col-md-3"><label class="form-label">اسم العميل</label><input name="customerName" class="form-control" maxlength="150"></div>
         <div class="col-md-4"><label class="form-label">رقم هاتف العميل</label><input name="customerPhone" class="form-control" maxlength="30"></div>
         <div class="col-md-4"><label class="form-label">الخصم</label><input id="discount" name="discount" type="number" min="0" step="0.01" value="0" class="form-control"></div>
     </div>
