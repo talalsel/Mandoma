@@ -7,6 +7,12 @@ using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var port = builder.Configuration["PORT"];
+if (!string.IsNullOrWhiteSpace(port) && int.TryParse(port, out var portNumber))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{portNumber}");
+}
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IPasswordHasher<UserAccount>, PasswordHasher<UserAccount>>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -43,6 +49,18 @@ if (!string.IsNullOrWhiteSpace(databaseUrl) && databaseUrl.StartsWith("postgres"
     };
     connectionString = builderConnection.ToString();
 }
+else if (!string.IsNullOrWhiteSpace(builder.Configuration["PGHOST"]))
+{
+    connectionString = new NpgsqlConnectionStringBuilder
+    {
+        Host = builder.Configuration["PGHOST"],
+        Port = int.TryParse(builder.Configuration["PGPORT"], out var pgPort) ? pgPort : 5432,
+        Username = builder.Configuration["PGUSER"],
+        Password = builder.Configuration["PGPASSWORD"],
+        Database = builder.Configuration["PGDATABASE"],
+        SslMode = SslMode.Require
+    }.ToString();
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -57,7 +75,9 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (!string.IsNullOrWhiteSpace(builder.Configuration["DATABASE_URL"]))
+    if (!string.IsNullOrWhiteSpace(databaseUrl)
+        || !string.IsNullOrWhiteSpace(builder.Configuration["PGHOST"])
+        || !connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
         await db.Database.MigrateAsync();
     else
     {
@@ -104,6 +124,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 app.MapControllerRoute(
     name: "default",
