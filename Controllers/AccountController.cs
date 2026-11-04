@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Inventory.Web.Controllers;
 
@@ -155,6 +156,167 @@ public class AccountController(AppDbContext db, IPasswordHasher<UserAccount> has
         await db.SaveChangesAsync();
         TempData["Message"] = $"تم تعديل بيانات المستخدم {user.Username} بنجاح";
         return RedirectToAction(nameof(Users));
+    }
+
+    [Authorize(Roles = "Admin")]
+    public IActionResult Backup()
+    {
+        return View();
+    }
+
+    [HttpPost, Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DownloadBackup()
+    {
+        var backup = new BackupPackage
+        {
+            Branches = await db.Branches.AsNoTracking().ToListAsync(),
+            Users = await db.Users.AsNoTracking().ToListAsync(),
+            Customers = await db.Customers.AsNoTracking().ToListAsync(),
+            Employees = await db.Employees.AsNoTracking().ToListAsync(),
+            EmployeeAttendances = await db.EmployeeAttendances.AsNoTracking().ToListAsync(),
+            EmployeeDeductions = await db.EmployeeDeductions.AsNoTracking().ToListAsync(),
+            Products = await db.Products.AsNoTracking().ToListAsync(),
+            BranchStocks = await db.BranchStocks.AsNoTracking().ToListAsync(),
+            Transfers = await db.Transfers.AsNoTracking().ToListAsync(),
+            Sales = await db.Sales.AsNoTracking().ToListAsync(),
+            SaleItems = await db.SaleItems.AsNoTracking().ToListAsync(),
+            StockMovements = await db.StockMovements.AsNoTracking().ToListAsync(),
+            Accounts = await db.Accounts.AsNoTracking().ToListAsync(),
+            JournalEntries = await db.JournalEntries.AsNoTracking().ToListAsync(),
+            JournalLines = await db.JournalLines.AsNoTracking().ToListAsync(),
+            Expenses = await db.Expenses.AsNoTracking().ToListAsync(),
+            Purchases = await db.Purchases.AsNoTracking().ToListAsync(),
+            CashRegisterSessions = await db.CashRegisterSessions.AsNoTracking().ToListAsync()
+        };
+
+        var json = JsonSerializer.SerializeToUtf8Bytes(backup, new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+        });
+        var fileName = $"selini-backup-{DateTime.Now:yyyy-MM-dd-HHmm}.json";
+        return File(json, "application/json", fileName);
+    }
+
+    [HttpPost, Authorize(Roles = "Admin"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreBackup(IFormFile backupFile, bool confirmRestore)
+    {
+        if (!confirmRestore)
+        {
+            TempData["Error"] = "يجب تأكيد الاستعادة قبل استبدال البيانات الحالية";
+            return RedirectToAction(nameof(Backup));
+        }
+        if (backupFile is null || backupFile.Length == 0)
+        {
+            TempData["Error"] = "اختر ملف النسخة الاحتياطية أولاً";
+            return RedirectToAction(nameof(Backup));
+        }
+        if (backupFile.Length > 100 * 1024 * 1024)
+        {
+            TempData["Error"] = "حجم النسخة الاحتياطية أكبر من 100 ميغابايت";
+            return RedirectToAction(nameof(Backup));
+        }
+
+        BackupPackage? backup;
+        try
+        {
+            await using var stream = backupFile.OpenReadStream();
+            backup = await JsonSerializer.DeserializeAsync<BackupPackage>(stream, new JsonSerializerOptions
+            {
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+            });
+        }
+        catch
+        {
+            TempData["Error"] = "ملف النسخة الاحتياطية غير صالح أو تالف";
+            return RedirectToAction(nameof(Backup));
+        }
+
+        if (backup is null || backup.Version != 1)
+        {
+            TempData["Error"] = "نسخة النسخة الاحتياطية غير مدعومة";
+            return RedirectToAction(nameof(Backup));
+        }
+
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        try
+        {
+            await db.JournalLines.ExecuteDeleteAsync();
+            await db.SaleItems.ExecuteDeleteAsync();
+            await db.EmployeeAttendances.ExecuteDeleteAsync();
+            await db.EmployeeDeductions.ExecuteDeleteAsync();
+            await db.BranchStocks.ExecuteDeleteAsync();
+            await db.Transfers.ExecuteDeleteAsync();
+            await db.StockMovements.ExecuteDeleteAsync();
+            await db.Expenses.ExecuteDeleteAsync();
+            await db.Purchases.ExecuteDeleteAsync();
+            await db.CashRegisterSessions.ExecuteDeleteAsync();
+            await db.JournalEntries.ExecuteDeleteAsync();
+            await db.Sales.ExecuteDeleteAsync();
+            await db.Products.ExecuteDeleteAsync();
+            await db.EmployeeDeductions.ExecuteDeleteAsync();
+            await db.EmployeeAttendances.ExecuteDeleteAsync();
+            await db.Employees.ExecuteDeleteAsync();
+            await db.Accounts.ExecuteDeleteAsync();
+            await db.Customers.ExecuteDeleteAsync();
+            await db.Users.ExecuteDeleteAsync();
+            await db.Branches.ExecuteDeleteAsync();
+
+            db.Branches.AddRange(backup.Branches);
+            db.Users.AddRange(backup.Users);
+            db.Customers.AddRange(backup.Customers);
+            db.Employees.AddRange(backup.Employees);
+            db.EmployeeAttendances.AddRange(backup.EmployeeAttendances);
+            db.EmployeeDeductions.AddRange(backup.EmployeeDeductions);
+            db.Products.AddRange(backup.Products);
+            db.BranchStocks.AddRange(backup.BranchStocks);
+            db.Transfers.AddRange(backup.Transfers);
+            db.Sales.AddRange(backup.Sales);
+            db.SaleItems.AddRange(backup.SaleItems);
+            db.StockMovements.AddRange(backup.StockMovements);
+            db.Accounts.AddRange(backup.Accounts);
+            db.JournalEntries.AddRange(backup.JournalEntries);
+            db.JournalLines.AddRange(backup.JournalLines);
+            db.Expenses.AddRange(backup.Expenses);
+            db.Purchases.AddRange(backup.Purchases);
+            db.CashRegisterSessions.AddRange(backup.CashRegisterSessions);
+
+            await db.SaveChangesAsync();
+            await ResetIdentitySequencesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            TempData["Error"] = "فشلت استعادة النسخة الاحتياطية. لم يتم استبدال البيانات بسبب فشل العملية";
+            return RedirectToAction(nameof(Backup));
+        }
+
+        TempData["Message"] = $"تمت استعادة النسخة الاحتياطية التي أُنشئت في {backup.CreatedAt:yyyy-MM-dd HH:mm} UTC بنجاح";
+        return RedirectToAction(nameof(Logout));
+    }
+
+    private async Task ResetIdentitySequencesAsync()
+    {
+        var tables = new[]
+        {
+            "Branches", "Users", "Customers", "Employees", "EmployeeAttendances", "EmployeeDeductions",
+            "Products", "BranchStocks", "Transfers", "Sales", "SaleItems", "StockMovements", "Accounts",
+            "JournalEntries", "JournalLines", "Expenses", "Purchases", "CashRegisterSessions"
+        };
+
+        if (db.Database.IsNpgsql())
+        {
+            foreach (var table in tables)
+                await db.Database.ExecuteSqlRawAsync(
+                    $"SELECT setval(pg_get_serial_sequence('\"{table}\"', 'Id'), COALESCE((SELECT MAX(\"Id\") FROM \"{table}\"), 1), true)");
+        }
+        else if (db.Database.IsSqlite())
+        {
+            foreach (var table in tables)
+                await db.Database.ExecuteSqlRawAsync(
+                    $"UPDATE sqlite_sequence SET seq = COALESCE((SELECT MAX(Id) FROM \"{table}\"), 0) WHERE name = '{table}'");
+        }
     }
 
     [HttpPost, Authorize(Roles = "Admin"), ValidateAntiForgeryToken]

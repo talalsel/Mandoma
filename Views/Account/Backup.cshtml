@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "النسخ الاحتياطية";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h2 class="mb-4">النسخ الاحتياطي واستعادة البيانات</h2>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-success">@TempData["Message"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <div class="card mb-4">
+            <div class="card-header"><strong>أخذ نسخة احتياطية الآن</strong></div>
+            <div class="card-body">
+                <p>تنزيل ملف JSON يحتوي بيانات المنظومة: المستخدمون، الأصناف، الفواتير، الزبائن، الموظفون، المحاسبة والمخزون.</p>
+                <form asp-action="DownloadBackup" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">تنزيل النسخة الاحتياطية</button>
+                </form>
+                <small class="text-muted d-block mt-3">احفظ الملف في Google Drive أو جهاز آمن، ولا تشاركه مع أشخاص غير مخولين.</small>
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header text-danger"><strong>استعادة نسخة احتياطية</strong></div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    الاستعادة تستبدل جميع بيانات المنظومة الحالية. خذ نسخة جديدة قبل الاستعادة حتى لا تفقد الفواتير أو العمليات التي أُنشئت بعد آخر نسخة.
+                </div>
+                <form asp-action="RestoreBackup" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">ملف النسخة الاحتياطية (.json)</label>
+                        <input class="form-control" type="file" name="backupFile" accept="application/json,.json" required />
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="confirmRestore" value="true" id="confirmRestore" required />
+                        <label class="form-check-label" for="confirmRestore">أؤكد أنني أريد استبدال البيانات الحالية بهذه النسخة</label>
+                    </div>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('هل أنت متأكد؟ سيتم استبدال جميع بيانات المنظومة بالنسخة المختارة.');">استعادة النسخة</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
