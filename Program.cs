@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -64,6 +65,9 @@ else if (!string.IsNullOrWhiteSpace(builder.Configuration["PGHOST"]))
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
+
     if (connectionString.StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase))
         options.UseSqlite(connectionString);
     else
