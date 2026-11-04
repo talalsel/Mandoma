@@ -23,12 +23,34 @@ public class ProductsController(AppDbContext db) : Controller
     [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,StockOnly")]
     public async Task<IActionResult> Create(Product product)
     {
+        product.Sku = product.Sku?.Trim().ToUpperInvariant() ?? "";
+        product.Name = product.Name?.Trim() ?? "";
+        product.Category = product.Category?.Trim();
         if (!ModelState.IsValid) return View(product);
-        if (await db.Products.AnyAsync(p => p.Sku == product.Sku))
+        if (product.Quantity < 0 || product.MinQuantity < 0 || product.Cost < 0 || product.Price < 0)
+        {
+            ModelState.AddModelError("", "الكمية والأسعار والقيم يجب أن تكون صفرًا أو أكبر");
+            return View(product);
+        }
+        if (await db.Products.AnyAsync(p => p.Sku.ToUpper() == product.Sku))
         {
             ModelState.AddModelError("Sku", "رمز الصنف مستخدم بالفعل");
             return View(product);
         }
+        var branchId = product.BranchId;
+        if (branchId == 0)
+        {
+            var defaultBranch = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Id).FirstOrDefaultAsync();
+            if (defaultBranch == null)
+            {
+                defaultBranch = new Branch { Name = "المخزن الرئيسي", Code = "MAIN", Address = "", IsActive = true };
+                db.Branches.Add(defaultBranch);
+                await db.SaveChangesAsync();
+            }
+            branchId = defaultBranch.Id;
+        }
+        product.BranchId = branchId;
+        product.ReservedQuantity = 0;
         db.Products.Add(product);
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Index));

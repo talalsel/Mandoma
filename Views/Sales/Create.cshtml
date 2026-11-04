@@ -5,9 +5,11 @@
     <div asp-validation-summary="All" class="text-danger"></div>
     <div class="row g-3 mb-3">
         <div class="col-md-3"><label class="form-label">نوع الفاتورة</label><select name="invoiceType" class="form-select"><option value="0">فاتورة مبيعات نقدية</option><option value="1">أمر صرف</option><option value="2">فاتورة مبدئية</option></select></div>
-        <div class="col-md-3"><label class="form-label">اسم العميل</label><input name="customerName" class="form-control" maxlength="150"></div>
-        <div class="col-md-4"><label class="form-label">رقم هاتف العميل</label><input name="customerPhone" class="form-control" maxlength="30"></div>
-        <div class="col-md-4"><label class="form-label">الخصم</label><input id="discount" name="discount" type="number" min="0" step="0.01" value="0" class="form-control"></div>
+        <div class="col-md-3"><label class="form-label">اختيار زبون موجود</label><input id="customerSearch" class="form-control" list="customerList" placeholder="ابحث بالاسم أو الهاتف"><datalist id="customerList">@foreach(var c in (IEnumerable<Inventory.Web.Models.Customer>)ViewBag.Customers){<option value="@c.Name" data-id="@c.Id" data-phone="@c.Phone" data-address="@c.Address">@c.Phone</option>}</datalist><input id="customerId" name="customerId" type="hidden"></div>
+        <div class="col-md-3"><label class="form-label">اسم العميل / زبون جديد</label><input id="customerName" name="customerName" class="form-control" maxlength="150"></div>
+        <div class="col-md-3"><label class="form-label">رقم هاتف العميل</label><input id="customerPhone" name="customerPhone" class="form-control" maxlength="30"></div>
+        <div class="col-md-6"><label class="form-label">عنوان العميل <span class="text-muted">(اختياري)</span></label><input id="customerAddress" name="customerAddress" class="form-control" maxlength="250"></div>
+        <div class="col-md-3"><label class="form-label">الخصم</label><input id="discount" name="discount" type="number" min="0" step="0.01" value="0" class="form-control"></div>
     </div>
     <table class="table table-bordered align-middle" id="itemsTable">
         <thead><tr><th style="width:55%">الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th><th></th></tr></thead>
@@ -21,6 +23,13 @@
 </form>
 @section Scripts {
 <script>
+const customerSearch=document.getElementById('customerSearch');
+customerSearch.addEventListener('input',()=>{
+  const option=[...document.querySelectorAll('#customerList option')].find(x=>x.value===customerSearch.value);
+  if(option){document.getElementById('customerId').value=option.dataset.id||'';document.getElementById('customerName').value=option.value;document.getElementById('customerPhone').value=option.dataset.phone||'';document.getElementById('customerAddress').value=option.dataset.address||'';}
+  else{document.getElementById('customerId').value='';}
+});
+customerSearch.addEventListener('change',()=>{if(!customerSearch.value){document.getElementById('customerId').value='';document.getElementById('customerName').value='';document.getElementById('customerPhone').value='';document.getElementById('customerAddress').value='';}});
 const table=document.getElementById('itemsTable');
 function calc(){let subtotal=0;document.querySelectorAll('.item-row').forEach(row=>{const select=row.querySelector('.product-select');const option=select.options[select.selectedIndex];const price=parseFloat(option?.dataset.price||0);const quantity=parseInt(row.querySelector('.quantity').value||0);const total=price*quantity;row.querySelector('.unit-price').textContent=price.toFixed(2);row.querySelector('.line-total').textContent=total.toFixed(2);subtotal+=total});const discount=parseFloat(document.getElementById('discount').value||0);document.getElementById('grandTotal').textContent=Math.max(0,subtotal-discount).toFixed(2)}
 table.addEventListener('change',calc);table.addEventListener('input',calc);document.getElementById('discount').addEventListener('input',calc);

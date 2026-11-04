@@ -544,6 +544,14 @@ namespace Inventory.Web.Migrations
                     b.Property<int>("BranchId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("CustomerAddress")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("CustomerName")
                         .IsRequired()
                         .HasMaxLength(150)
@@ -584,6 +592,8 @@ namespace Inventory.Web.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("UserId");
 
@@ -893,6 +903,10 @@ namespace Inventory.Web.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Inventory.Web.Models.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId");
+
                     b.HasOne("Inventory.Web.Models.UserAccount", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -900,6 +914,8 @@ namespace Inventory.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Branch");
+
+                    b.Navigation("Customer");
 
                     b.Navigation("User");
                 });

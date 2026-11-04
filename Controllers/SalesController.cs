@@ -24,21 +24,48 @@ public class SalesController(AppDbContext db) : Controller
     public async Task<IActionResult> Create()
     {
         ViewBag.Products = await db.Products.OrderBy(x => x.Name).ToListAsync();
+        ViewBag.Customers = await db.Customers.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
         return View();
     }
 
     [HttpPost, ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(List<int> productIds, List<int> quantities, SaleType invoiceType = SaleType.Cash, string customerName = "", string customerPhone = "", decimal discount = 0, string notes = "")
+    public async Task<IActionResult> Create(List<int> productIds, List<int> quantities, SaleType invoiceType = SaleType.Cash, int? customerId = null, string customerName = "", string customerPhone = "", string customerAddress = "", decimal discount = 0, string notes = "")
     {
         if (productIds.Count == 0 || productIds.Count != quantities.Count || discount < 0)
         {
             ModelState.AddModelError("", "أدخل أصنافًا صحيحة ومبلغ خصم صالحًا");
             ViewBag.Products = await db.Products.OrderBy(x => x.Name).ToListAsync();
+            ViewBag.Customers = await db.Customers.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
             return View();
         }
 
         await using var tx = await db.Database.BeginTransactionAsync();
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        Customer? customer = null;
+        customerName = customerName?.Trim() ?? "";
+        customerPhone = customerPhone?.Trim() ?? "";
+        customerAddress = customerAddress?.Trim() ?? "";
+        if (customerId.HasValue)
+            customer = await db.Customers.FirstOrDefaultAsync(x => x.Id == customerId.Value && x.IsActive);
+        if (customer != null)
+        {
+            customerName = customer.Name;
+            customerPhone = customer.Phone;
+            customerAddress = customer.Address;
+        }
+        else if (!string.IsNullOrWhiteSpace(customerName))
+        {
+            customer = await db.Customers.FirstOrDefaultAsync(x => x.IsActive &&
+                ((!string.IsNullOrEmpty(customerPhone) && x.Phone == customerPhone) || x.Name.ToLower() == customerName.ToLower()));
+            if (customer == null)
+            {
+                customer = new Customer { Name = customerName, Phone = customerPhone, Address = customerAddress, IsActive = true };
+                db.Customers.Add(customer);
+                await db.SaveChangesAsync();
+            }
+            customerId = customer.Id;
+        }
         var items = new List<SaleItem>();
         decimal subtotal = 0;
         decimal cost = 0;
@@ -63,7 +90,7 @@ public class SalesController(AppDbContext db) : Controller
 
         var total = subtotal - discount;
         if (total < 0) throw new InvalidOperationException("الخصم أكبر من إجمالي الفاتورة");
-        var sale = new Sale { UserId = userId, Type = invoiceType, InvoiceNumber = await NextInvoiceNumberAsync(invoiceType), SoldAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), Total = total, Discount = discount, CustomerName = customerName?.Trim() ?? "", CustomerPhone = customerPhone?.Trim() ?? "", Notes = notes?.Trim() ?? "", Items = items };
+        var sale = new Sale { UserId = userId, CustomerId = customerId, Type = invoiceType, InvoiceNumber = await NextInvoiceNumberAsync(invoiceType), SoldAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), Total = total, Discount = discount, CustomerName = customerName, CustomerPhone = customerPhone, CustomerAddress = customerAddress, Notes = notes?.Trim() ?? "", Items = items };
         db.Sales.Add(sale);
         await db.SaveChangesAsync();
         if (invoiceType != SaleType.Draft)
@@ -73,10 +100,11 @@ public class SalesController(AppDbContext db) : Controller
     }
 
     [Authorize(Roles = "Admin,Sales,Cashier,Accountant")]
-    public async Task<IActionResult> Print(int id)
+    public async Task<IActionResult> Print(int id, SaleType? printType)
     {
         var sale = await db.Sales.Include(x => x.Items).ThenInclude(x => x.Product).Include(x => x.User).FirstOrDefaultAsync(x => x.Id == id);
         if (sale == null) return NotFound();
+        ViewBag.PrintType = printType ?? sale.Type;
         return View(sale);
     }
 

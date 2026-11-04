@@ -111,8 +111,11 @@ public class Sale
     public DateTime SoldAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public decimal Total { get; set; }
     public decimal Discount { get; set; }
+    public int? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
     [StringLength(150)] public string CustomerName { get; set; } = "";
     [StringLength(30)] public string CustomerPhone { get; set; } = "";
+    [StringLength(250)] public string CustomerAddress { get; set; } = "";
     [StringLength(500)] public string Notes { get; set; } = "";
     public int BranchId { get; set; }
     public Branch? Branch { get; set; }
