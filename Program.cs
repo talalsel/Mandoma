@@ -119,6 +119,13 @@ using (var scope = app.Services.CreateScope())
         db.Users.Add(admin);
         await db.SaveChangesAsync();
     }
+    else
+    {
+        admin.PasswordHash = hasher.HashPassword(admin, adminPassword);
+        admin.Role = UserRole.Admin;
+        admin.IsActive = true;
+        await db.SaveChangesAsync();
+    }
 }
 
 // Configure the HTTP request pipeline.
