@@ -20,7 +20,9 @@ public class HomeController(AppDbContext db) : Controller
         ViewBag.ProductCount = await db.Products.CountAsync();
         ViewBag.InventoryValue = await db.Products.SumAsync(p => p.Quantity * p.Cost);
         ViewBag.LowStockCount = await db.Products.CountAsync(p => p.Quantity <= p.MinQuantity);
-        ViewBag.TodaySales = await db.Sales.Where(s => s.SoldAt.Date == DateTime.Today).SumAsync(s => (decimal?)s.Total) ?? 0;
+        var today = DateTime.Today;
+        var tomorrow = today.AddDays(1);
+        ViewBag.TodaySales = await db.Sales.Where(s => s.SoldAt >= today && s.SoldAt < tomorrow).SumAsync(s => (decimal?)s.Total) ?? 0;
         ViewBag.LowStock = await db.Products.Where(p => p.Quantity <= p.MinQuantity).OrderBy(p => p.Quantity).Take(10).ToListAsync();
 
         var branches = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
