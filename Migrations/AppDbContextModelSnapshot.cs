@@ -122,7 +122,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal?>("Difference")
                         .HasPrecision(18, 2)
@@ -136,7 +136,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("OpenedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("OpeningBalance")
                         .HasPrecision(18, 2)
@@ -220,7 +220,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("HireDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
@@ -271,7 +271,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("INTEGER");
@@ -311,7 +311,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("DeductionDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("INTEGER");
@@ -350,7 +350,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("ExpenseDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsCancelled")
                         .HasColumnType("INTEGER");
@@ -374,7 +374,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -382,7 +382,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("EntryDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -512,7 +512,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("SupplierName")
                         .IsRequired()
@@ -561,7 +561,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("SoldAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("Total")
                         .HasPrecision(18, 2)
@@ -613,7 +613,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("INTEGER");
@@ -642,7 +642,7 @@ namespace Inventory.Web.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("FromBranchId")
                         .HasColumnType("INTEGER");

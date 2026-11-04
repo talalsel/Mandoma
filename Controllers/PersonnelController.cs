@@ -15,8 +15,9 @@ public class PersonnelController(AppDbContext db) : Controller
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(x => x.FullName.Contains(search) || x.EmployeeNumber.Contains(search) || x.JobTitle.Contains(search));
         ViewBag.TotalEmployees = await db.Employees.CountAsync(x => x.IsActive);
-        ViewBag.PresentToday = await db.EmployeeAttendances.CountAsync(x => x.Date == DateTime.Today && x.Status == AttendanceStatus.Present);
-        ViewBag.MonthDeductions = await db.EmployeeDeductions.Where(x => x.DeductionDate.Year == DateTime.Today.Year && x.DeductionDate.Month == DateTime.Today.Month).SumAsync(x => (decimal?)x.Amount) ?? 0;
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
+        ViewBag.PresentToday = await db.EmployeeAttendances.CountAsync(x => x.Date == today && x.Status == AttendanceStatus.Present);
+        ViewBag.MonthDeductions = await db.EmployeeDeductions.Where(x => x.DeductionDate.Year == today.Year && x.DeductionDate.Month == today.Month).SumAsync(x => (decimal?)x.Amount) ?? 0;
         return View(await query.OrderBy(x => x.FullName).ToListAsync());
     }
 
@@ -24,7 +25,7 @@ public class PersonnelController(AppDbContext db) : Controller
     {
         ViewBag.Branches = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
         ViewBag.Users = await db.Users.Where(x => x.IsActive).OrderBy(x => x.FullName).ToListAsync();
-        return View(new Employee { HireDate = DateTime.Today, EmployeeNumber = await NextEmployeeNumberAsync() });
+        return View(new Employee { HireDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified), EmployeeNumber = await NextEmployeeNumberAsync() });
     }
 
     [HttpPost, ValidateAntiForgeryToken]
@@ -94,7 +95,9 @@ public class PersonnelController(AppDbContext db) : Controller
 
     public async Task<IActionResult> Attendance(int? employeeId, DateTime? date)
     {
-        var selectedDate = date?.Date ?? DateTime.Today;
+        var selectedDate = date.HasValue
+            ? DateTime.SpecifyKind(date.Value.Date, DateTimeKind.Unspecified)
+            : DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
         ViewBag.Date = selectedDate.ToString("yyyy-MM-dd");
         ViewBag.Employees = await db.Employees.Include(x => x.Branch).Where(x => x.IsActive).OrderBy(x => x.FullName).ToListAsync();
         var query = db.EmployeeAttendances.Include(x => x.Employee).Include(x => x.Branch)
@@ -127,13 +130,13 @@ public class PersonnelController(AppDbContext db) : Controller
     {
         ViewBag.Employees = await db.Employees.Where(x => x.IsActive).OrderBy(x => x.FullName).ToListAsync();
         ViewBag.SelectedEmployeeId = employeeId;
-        ViewBag.CanManage = true;
+        ViewBag.CanManage = User.IsInRole("Admin") || User.IsInRole("Accountant");
         var query = db.EmployeeDeductions.Include(x => x.Employee).AsQueryable();
         if (employeeId.HasValue) query = query.Where(x => x.EmployeeId == employeeId.Value);
         return View(await query.OrderByDescending(x => x.DeductionDate).ToListAsync());
     }
 
-    [HttpPost, ValidateAntiForgeryToken]
+    [HttpPost, Authorize(Roles = "Admin,Accountant"), ValidateAntiForgeryToken]
     public async Task<IActionResult> AddDeduction(int employeeId, DateTime deductionDate, decimal amount, string reason)
     {
         if (amount <= 0 || string.IsNullOrWhiteSpace(reason))
@@ -145,6 +148,28 @@ public class PersonnelController(AppDbContext db) : Controller
         await db.SaveChangesAsync();
         TempData["Message"] = "تم إضافة الخصم وربطه ببيانات الموظف";
         return RedirectToAction(nameof(Deductions), new { employeeId });
+    }
+
+    [HttpPost, Authorize(Roles = "Admin,Personnel"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEmployee(int id)
+    {
+        var employee = await db.Employees.FindAsync(id);
+        if (employee is null) return NotFound();
+        db.Employees.Remove(employee);
+        await db.SaveChangesAsync();
+        TempData["Message"] = "تم حذف الموظف وجميع سجلاته المرتبطه";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost, Authorize(Roles = "Admin,Accountant"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDeduction(int id)
+    {
+        var deduction = await db.EmployeeDeductions.FindAsync(id);
+        if (deduction is null) return NotFound();
+        db.EmployeeDeductions.Remove(deduction);
+        await db.SaveChangesAsync();
+        TempData["Message"] = "تم حذف الخصم بنجاح";
+        return RedirectToAction(nameof(Deductions), new { employeeId = deduction.EmployeeId });
     }
 
     private int CurrentUserId()

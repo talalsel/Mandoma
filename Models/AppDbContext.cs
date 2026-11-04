@@ -47,6 +47,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<EmployeeDeduction>().Property(x => x.Amount).HasPrecision(18, 2);
         modelBuilder.Entity<EmployeeAttendance>().HasIndex(x => new { x.EmployeeId, x.Date }).IsUnique();
 
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                {
+                    property.SetColumnType("timestamp without time zone");
+                }
+            }
+        }
+
         modelBuilder.Entity<UserAccount>().HasData(new UserAccount
         {
             Id = 1, FullName = "مدير النظام", Username = "admin",

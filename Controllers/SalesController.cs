@@ -51,7 +51,7 @@ public class SalesController(AppDbContext db) : Controller
 
         var total = subtotal - discount;
         if (total < 0) throw new InvalidOperationException("الخصم أكبر من إجمالي الفاتورة");
-        var sale = new Sale { UserId = userId, SoldAt = DateTime.Now, Total = total, Discount = discount, CustomerName = customerName?.Trim() ?? "", CustomerPhone = customerPhone?.Trim() ?? "", Notes = notes?.Trim() ?? "", Items = items };
+        var sale = new Sale { UserId = userId, SoldAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified), Total = total, Discount = discount, CustomerName = customerName?.Trim() ?? "", CustomerPhone = customerPhone?.Trim() ?? "", Notes = notes?.Trim() ?? "", Items = items };
         db.Sales.Add(sale);
         await db.SaveChangesAsync();
         await AddSaleJournalAsync(sale, cost);

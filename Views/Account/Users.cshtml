@@ -1,6 +1,27 @@
 @model IEnumerable<Inventory.Web.Models.UserAccount>
 @{ ViewData["Title"] = "المستخدمون"; }
 <div class="d-flex justify-content-between align-items-center mb-3"><h2>المستخدمون</h2><a class="btn btn-primary" asp-action="CreateUser">إنشاء مستخدم</a></div>
-@if (TempData["Message"] is string message) {<div class="alert alert-success">@message</div>}
+@if (TempData["Message"] is string message) { <div class="alert alert-success">@message</div> }
+@if (TempData["Error"] is string error) { <div class="alert alert-danger">@error</div> }
 <form method="get" class="mb-3"><input name="search" class="form-control" placeholder="بحث عن مستخدم"></form>
-<table class="table table-striped"><thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الصلاحية</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>@foreach(var u in Model){<tr><td>@u.FullName</td><td>@u.Username</td><td>@(u.Role == Inventory.Web.Models.UserRole.Admin ? "مدير النظام" : u.Role == Inventory.Web.Models.UserRole.Accountant ? "محاسب" : u.Role == Inventory.Web.Models.UserRole.Cashier ? "أمين الصندوق" : u.Role == Inventory.Web.Models.UserRole.Sales ? "موظف مبيعات" : u.Role == Inventory.Web.Models.UserRole.StockOnly ? "أمين المخزن" : "غير معروف")</td><td>@(u.IsActive ? "نشط" : "معطل")</td><td><a class="btn btn-sm btn-warning" asp-action="ChangePassword" asp-route-id="@u.Id">تغيير كلمة المرور</a></td></tr>}</tbody></table>
+<div class="table-responsive">
+<table class="table table-striped">
+<thead><tr><th>الاسم</th><th>اسم المستخدم</th><th>الصلاحية</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
+<tbody>
+@foreach(var u in Model) {
+<tr>
+<td>@u.FullName</td><td>@u.Username</td>
+<td>@(u.Role switch { Inventory.Web.Models.UserRole.Admin => "مدير النظام", Inventory.Web.Models.UserRole.Accountant => "محاسب", Inventory.Web.Models.UserRole.Cashier => "أمين الصندوق", Inventory.Web.Models.UserRole.Sales => "موظف مبيعات", Inventory.Web.Models.UserRole.StockOnly => "أمين المخزن", Inventory.Web.Models.UserRole.Personnel => "شؤون موظفين", _ => "غير معروف" })</td>
+<td>@(u.IsActive ? "نشط" : "معطل")</td>
+<td class="d-flex gap-1">
+<a class="btn btn-sm btn-outline-primary" asp-action="EditUser" asp-route-id="@u.Id">تعديل</a>
+<a class="btn btn-sm btn-warning" asp-action="ChangePassword" asp-route-id="@u.Id">كلمة المرور</a>
+@if (u.IsActive && !(u.Role == Inventory.Web.Models.UserRole.Admin && Model.Count(x => x.Role == Inventory.Web.Models.UserRole.Admin && x.IsActive) == 1)) {
+<form asp-action="DeleteUser" asp-route-id="@u.Id" method="post" onsubmit="return confirm('هل تريد حذف وتعطيل هذا المستخدم؟');"><button class="btn btn-sm btn-danger" type="submit">حذف</button></form>
+}
+</td>
+</tr>
+}
+</tbody>
+</table>
+</div>

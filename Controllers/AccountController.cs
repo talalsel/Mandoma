@@ -122,4 +122,58 @@ public class AccountController(AppDbContext db, IPasswordHasher<UserAccount> has
         TempData["Message"] = $"تم تغيير كلمة مرور المستخدم {user.Username} بنجاح";
         return RedirectToAction(nameof(Users));
     }
+
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> EditUser(int id)
+    {
+        var user = await db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+        ViewBag.Branches = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
+        return View(user);
+    }
+
+    [HttpPost, Authorize(Roles = "Admin"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditUser(int id, UserAccount editedUser)
+    {
+        var user = await db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+        editedUser.PasswordHash = user.PasswordHash;
+        ModelState.Remove(nameof(UserAccount.PasswordHash));
+        if (await db.Users.AnyAsync(x => x.Username == editedUser.Username.Trim() && x.Id != id))
+            ModelState.AddModelError("Username", "اسم المستخدم مستخدم بالفعل");
+        if (!ModelState.IsValid)
+        {
+            ViewBag.Branches = await db.Branches.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
+            return View(editedUser);
+        }
+
+        user.FullName = editedUser.FullName.Trim();
+        user.Username = editedUser.Username.Trim();
+        user.Role = editedUser.Role;
+        user.BranchId = editedUser.BranchId == 0 ? null : editedUser.BranchId;
+        user.IsActive = editedUser.IsActive;
+        await db.SaveChangesAsync();
+        TempData["Message"] = $"تم تعديل بيانات المستخدم {user.Username} بنجاح";
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpPost, Authorize(Roles = "Admin"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var currentUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedId) ? parsedId : 0;
+        var user = await db.Users.FindAsync(id);
+        if (user is null) return NotFound();
+        if (user.Id == currentUserId)
+        {
+            TempData["Error"] = "لا يمكن حذف حساب المستخدم المسجل حاليًا";
+            return RedirectToAction(nameof(Users));
+        }
+
+        var linkedEmployee = await db.Employees.FirstOrDefaultAsync(x => x.UserAccountId == id);
+        if (linkedEmployee is not null) linkedEmployee.UserAccountId = null;
+        user.IsActive = false;
+        await db.SaveChangesAsync();
+        TempData["Message"] = $"تم حذف وتعطيل حساب المستخدم {user.Username}";
+        return RedirectToAction(nameof(Users));
+    }
 }

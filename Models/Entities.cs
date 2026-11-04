@@ -41,7 +41,7 @@ public class Employee
     [StringLength(150)] public string Email { get; set; } = "";
     [StringLength(100)] public string JobTitle { get; set; } = "";
     [StringLength(100)] public string Department { get; set; } = "";
-    public DateTime HireDate { get; set; } = DateTime.Today;
+    public DateTime HireDate { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
     public decimal BaseSalary { get; set; }
     [StringLength(100)] public string BankAccount { get; set; } = "";
     public int? BranchId { get; set; }
@@ -71,7 +71,7 @@ public class EmployeeDeduction
     public int Id { get; set; }
     public int EmployeeId { get; set; }
     public Employee? Employee { get; set; }
-    public DateTime DeductionDate { get; set; } = DateTime.Today;
+    public DateTime DeductionDate { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
     public decimal Amount { get; set; }
     [Required, StringLength(250)] public string Reason { get; set; } = "";
     public int CreatedByUserId { get; set; }
@@ -103,7 +103,7 @@ public class Product
 public class Sale
 {
     public int Id { get; set; }
-    public DateTime SoldAt { get; set; } = DateTime.Now;
+    public DateTime SoldAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public decimal Total { get; set; }
     public decimal Discount { get; set; }
     [StringLength(150)] public string CustomerName { get; set; } = "";
@@ -134,7 +134,7 @@ public class StockMovement
     public Product? Product { get; set; }
     public int QuantityChange { get; set; }
     public string Reason { get; set; } = "";
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public int UserId { get; set; }
 }
 
@@ -153,13 +153,13 @@ public class JournalEntry
 {
     public int Id { get; set; }
     [Required, StringLength(30)] public string Number { get; set; } = "";
-    public DateTime EntryDate { get; set; } = DateTime.Today;
+    public DateTime EntryDate { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
     [StringLength(250)] public string Description { get; set; } = "";
     public JournalStatus Status { get; set; } = JournalStatus.Posted;
     public string ReferenceType { get; set; } = "Manual";
     public int? ReferenceId { get; set; }
     public int UserId { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public List<JournalLine> Lines { get; set; } = [];
 }
 
@@ -178,7 +178,7 @@ public class JournalLine
 public class Expense
 {
     public int Id { get; set; }
-    public DateTime ExpenseDate { get; set; } = DateTime.Today;
+    public DateTime ExpenseDate { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
     [Required, StringLength(150)] public string Description { get; set; } = "";
     public decimal Amount { get; set; }
     public int ExpenseAccountId { get; set; }
@@ -193,7 +193,7 @@ public class Purchase
 {
     public int Id { get; set; }
     [Required, StringLength(50)] public string InvoiceNumber { get; set; } = "";
-    public DateTime PurchaseDate { get; set; } = DateTime.Today;
+    public DateTime PurchaseDate { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Unspecified);
     public decimal Total { get; set; }
     public string SupplierName { get; set; } = "";
     public int BranchId { get; set; }
@@ -209,7 +209,7 @@ public class CashRegisterSession
     public int BranchId { get; set; }
     public Branch? Branch { get; set; }
     public int UserId { get; set; }
-    public DateTime OpenedAt { get; set; } = DateTime.Now;
+    public DateTime OpenedAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public DateTime? ClosedAt { get; set; }
     public decimal OpeningBalance { get; set; }
     public decimal? ExpectedBalance { get; set; }
@@ -229,7 +229,7 @@ public class Transfer
     public Product? Product { get; set; }
     public int Quantity { get; set; }
     public decimal UnitCost { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public DateTime CreatedAt { get; set; } = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     public int UserId { get; set; }
     public string Status { get; set; } = "Pending";
     public string Notes { get; set; } = "";

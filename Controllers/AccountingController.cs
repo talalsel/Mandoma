@@ -26,7 +26,7 @@ public class AccountingController(AppDbContext db) : Controller
     }
 
     [Authorize(Roles = "Admin,Accountant")]
-    public async Task<IActionResult> CreateJournal() { await EnsureAccountsAsync(); ViewBag.Accounts = await db.Accounts.Where(x => x.IsActive).OrderBy(x => x.Code).ToListAsync(); return View(new JournalEntry { Number = $"JE-{DateTime.Now:yyyyMMdd}-{DateTime.Now:HHmmss}" }); }
+    public async Task<IActionResult> CreateJournal() { await EnsureAccountsAsync(); ViewBag.Accounts = await db.Accounts.Where(x => x.IsActive).OrderBy(x => x.Code).ToListAsync(); return View(new JournalEntry { Number = $"JE-{DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified):yyyyMMdd}-{DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified):HHmmss}" }); }
 
     [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,Accountant")]
     public async Task<IActionResult> CreateJournal(JournalEntry entry, List<int> accountIds, List<decimal> debits, List<decimal> credits)
@@ -120,6 +120,6 @@ public class AccountingController(AppDbContext db) : Controller
 
     private static JournalEntry CreateExpenseJournal(Expense expense, Account expenseAccount, Account cash)
     {
-        return new JournalEntry { Number = $"EXP-{DateTime.Now:yyyyMMddHHmmss}", EntryDate = expense.ExpenseDate, Description = expense.Description, ReferenceType = "Expense", UserId = expense.UserId, Lines = [new JournalLine { AccountId = expenseAccount.Id, Debit = expense.Amount }, new JournalLine { AccountId = cash.Id, Credit = expense.Amount }] };
+        return new JournalEntry { Number = $"EXP-{DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified):yyyyMMddHHmmss}", EntryDate = expense.ExpenseDate, Description = expense.Description, ReferenceType = "Expense", UserId = expense.UserId, Lines = [new JournalLine { AccountId = expenseAccount.Id, Debit = expense.Amount }, new JournalLine { AccountId = cash.Id, Credit = expense.Amount }] };
     }
 }
